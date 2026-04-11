@@ -742,7 +742,992 @@ Histórico de **instantes de progreso por página** (**UC-03**): series temporal
 
 ## 4. Especificación de la API
 
-> Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
+Este contrato cubre el **alta en biblioteca** tras la selección de una edición en el flujo **UC-01** (búsqueda vía Open Library con fallback a Google Books o **entrada manual**): la SPA (`React` + `TypeScript`) invoca la API REST del backend **`NestJS`**; la autenticación sigue el patrón **Bearer JWT** descrito en la capa API del monolito (aislamiento por `user_id`).
+
+### OpenAPI 3.1 · `POST /books`
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Reading Analytics Platform API
+  version: 0.1.0
+  description: >
+    Alta de libro en la biblioteca de la usuaria autenticada (UC-01).
+    El servidor crea la fila en `books` y el registro asociado en `reading_records`
+    con estado por defecto `pendiente`.
+
+servers:
+  - url: https://api.example.com/v1
+    description: API REST versionada (prefijo global NestJS)
+
+paths:
+  /books:
+    post:
+      operationId: createBook
+      summary: Añadir un libro a la biblioteca
+      description: >
+        Persiste los metadatos elegidos tras la búsqueda en catálogo o el formulario manual.
+        Requiere sesión iniciada (precondición UC-01).
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Libro creado; registro de lectura inicial en estado pendiente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCreatedResponse'
+        '400':
+          description: Cuerpo inválido o validación fallida (DTO / pipes NestJS).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validation:
+                  summary: Errores de validación
+                  value:
+                    statusCode: 400
+                    message: Validation failed
+                    errors:
+                      - field: title
+                        constraints: ['title should not be empty']
+        '401':
+          description: Token ausente, expirado o inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                statusCode: 401
+                message: Unauthorized
+        '409':
+          description: >
+            Conflicto de negocio: la usuaria ya tiene un libro equivalente en biblioteca
+            (p. ej. mismo `isbn_13` o par `data_source` + `external_provider_id`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT emitido tras login (NestJS Guards).
+
+  schemas:
+    DataSource:
+      type: string
+      enum:
+        - open_library
+        - google_books
+        - goodreads
+        - manual
+      description: Debe coincidir con el CHECK de `books.data_source` en PostgreSQL.
+
+    CreateBookRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - authors
+        - data_source
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: Título de la edición seleccionada o introducida (NOT NULL en `books.title`).
+        authors:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: >
+            Autoras/os en texto plano (convención de mapeo desde OL/GB o manual).
+            Obligatorio en persistencia; puede ser un placeholder breve si la fuente no aporta nombre.
+        isbn_13:
+          type: [string, 'null']
+          pattern: '^97[89]\d{10}$'
+          description: ISBN-13 normalizado sin guiones; opcional.
+        isbn_10:
+          type: [string, 'null']
+          pattern: '^\d{9}[\dXx]$'
+          description: ISBN-10; opcional.
+        cover_image_url:
+          type: [string, 'null']
+          format: uri
+          maxLength: 2048
+          description: URL de portada si la API de catálogo la proporciona.
+        page_count:
+          type: [integer, 'null']
+          minimum: 0
+          description: Total de páginas; coherente con CHECK en `books.page_count`.
+        genre:
+          type: [string, 'null']
+          maxLength: 100
+        series_name:
+          type: [string, 'null']
+          maxLength: 255
+        publication_year:
+          type: [integer, 'null']
+          minimum: 1000
+          maximum: 2100
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        external_provider_id:
+          type: [string, 'null']
+          maxLength: 128
+          description: Identificador en la fuente externa (work/edition key); nulo en alta manual pura.
+        notes:
+          type: [string, 'null']
+          maxLength: 10000
+          description: Notas o correcciones tras selección aproximada (UC-01 flujo alternativo).
+
+    Book:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - authors
+        - data_source
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        authors:
+          type: string
+        isbn_13:
+          type: [string, 'null']
+        isbn_10:
+          type: [string, 'null']
+        cover_image_url:
+          type: [string, 'null']
+          format: uri
+        page_count:
+          type: [integer, 'null']
+        genre:
+          type: [string, 'null']
+        series_name:
+          type: [string, 'null']
+        publication_year:
+          type: [integer, 'null']
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        external_provider_id:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ReadingRecordSummary:
+      type: object
+      required:
+        - book_id
+        - status
+      properties:
+        book_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pendiente, leyendo, leido, dnf]
+          description: Tras UC-01 el valor es siempre `pendiente` (postcondición del caso de uso).
+
+    BookCreatedResponse:
+      type: object
+      required:
+        - book
+        - reading
+      properties:
+        book:
+          $ref: '#/components/schemas/Book'
+        reading:
+          $ref: '#/components/schemas/ReadingRecordSummary'
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    ConflictResponse:
+      type: object
+      required:
+        - statusCode
+        - message
+        - code
+      properties:
+        statusCode:
+          type: integer
+          const: 409
+        message:
+          type: string
+        code:
+          type: string
+          example: BOOK_DUPLICATE
+        existingBookId:
+          type: string
+          format: uuid
+          description: Opcional; id del libro ya existente para deduplicación en UI.
+```
+
+### Ejemplo de petición y respuesta (JSON)
+
+**Request** — `POST /v1/books` · cuerpo tras seleccionar una edición enriquecida por Open Library (autenticación `Authorization: Bearer <jwt>`):
+
+```json
+{
+  "title": "The Left Hand of Darkness",
+  "authors": "Ursula K. Le Guin",
+  "isbn_13": "9780441478125",
+  "isbn_10": "0441478123",
+  "cover_image_url": "https://covers.openlibrary.org/b/id/9255566-L.jpg",
+  "page_count": 304,
+  "genre": "Science fiction",
+  "series_name": "Hainish Cycle",
+  "publication_year": 1969,
+  "data_source": "open_library",
+  "external_provider_id": "OL82563W",
+  "notes": null
+}
+```
+
+**Response** — `201 Created`:
+
+```json
+{
+  "book": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "user_id": "9f8e7d6c-5b4a-3210-fedc-ba0987654321",
+    "title": "The Left Hand of Darkness",
+    "authors": "Ursula K. Le Guin",
+    "isbn_13": "9780441478125",
+    "isbn_10": "0441478123",
+    "cover_image_url": "https://covers.openlibrary.org/b/id/9255566-L.jpg",
+    "page_count": 304,
+    "genre": "Science fiction",
+    "series_name": "Hainish Cycle",
+    "publication_year": 1969,
+    "data_source": "open_library",
+    "external_provider_id": "OL82563W",
+    "notes": null,
+    "created_at": "2026-04-11T14:32:01.000Z",
+    "updated_at": "2026-04-11T14:32:01.000Z"
+  },
+  "reading": {
+    "book_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "pendiente"
+  }
+}
+```
+
+### OpenAPI 3.1 · `PATCH /books/{bookId}/reading-record`
+
+Actualización parcial del registro **`reading_records`** asociado a un libro (**1:1** por `book_id`), alineada con **UC-02** (cambio de estado y efectos al pasar a `leido`) y **UC-03** (progreso por página frente a `books.page_count`). Misma autenticación **Bearer JWT** y prefijo `/v1` que `POST /books`.
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Reading Analytics Platform API (fragmento)
+  version: 0.1.0
+
+paths:
+  /books/{bookId}/reading-record:
+    patch:
+      operationId: patchReadingRecord
+      summary: Actualizar estado y/o progreso de lectura
+      description: >
+        UC-02: mutación del `status` con efectos de producto al pasar a `leido`
+        (modal de finalización UC-04 en cliente; completado en TBR mensual activo si aplica, UC-05).
+        UC-03: si se envía `current_page`, el libro debe estar en `leyendo`, debe existir `page_count` en el libro
+        y debe cumplirse `1 <= current_page <= page_count`.
+        El servidor puede recalcular `progress_percent` a partir de `current_page` y `books.page_count`.
+      tags:
+        - Books
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchReadingRecordRequest'
+      responses:
+        '200':
+          description: Registro actualizado; cuerpo incluye lectura y metadatos útiles para la UI.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingRecordPatchedResponse'
+        '400':
+          description: JSON inválido, cuerpo vacío o validación sintáctica del DTO.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No autenticada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Libro inexistente o no pertenece a la usuaria autenticada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            Regla de negocio incumplida: p. ej. `current_page` con estado distinto de `leyendo`,
+            `current_page` > `page_count`, o `page_count` nulo en el libro al actualizar progreso (UC-03 4a/4b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnprocessableErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ReadingStatus:
+      type: string
+      enum:
+        - pendiente
+        - leyendo
+        - leido
+        - dnf
+      description: Valores del CHECK en `reading_records.status` (readme §3.2).
+
+    ReadFormat:
+      type: string
+      enum:
+        - fisico
+        - ebook
+        - audio
+
+    PatchReadingRecordRequest:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        status:
+          $ref: '#/components/schemas/ReadingStatus'
+        current_page:
+          type: integer
+          minimum: 1
+          description: >
+            UC-03: solo tiene sentido con `status === leyendo` (o sin cambiar estado si ya es `leyendo`);
+            el servidor valida contra `books.page_count`.
+        started_on:
+          type: string
+          format: date
+        finished_on:
+          type: string
+          format: date
+          description: >
+            UC-02/UC-04: al pasar a `leido`, puede enviarse; si se omite, el servidor puede fijar la fecha actual.
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Opcional en el mismo PATCH; el modal UC-04 puede completarse después.
+        read_format:
+          $ref: '#/components/schemas/ReadFormat'
+
+    ReadingRecordResource:
+      type: object
+      required:
+        - book_id
+        - status
+        - updated_at
+      properties:
+        book_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ReadingStatus'
+        current_page:
+          type: [integer, 'null']
+          minimum: 1
+        progress_percent:
+          anyOf:
+            - type: string
+              description: Valor con hasta dos decimales (columna NUMERIC(5,2) en PostgreSQL).
+            - type: 'null'
+          description: Null si no es calculable (p. ej. sin `page_count`).
+        rating:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 5
+        read_format:
+          anyOf:
+            - $ref: '#/components/schemas/ReadFormat'
+            - type: 'null'
+        started_on:
+          type: [string, 'null']
+          format: date
+        finished_on:
+          type: [string, 'null']
+          format: date
+        updated_at:
+          type: string
+          format: date-time
+
+    PatchSideEffectsMeta:
+      type: object
+      description: Pistas para el cliente sobre efectos UC-02 / UC-05 (el servidor las omite si no aplican).
+      properties:
+        openCompletionModal:
+          type: boolean
+          description: true si el estado pasó a `leido` y la UI debe abrir el flujo UC-04.
+        tbrAutoCompleted:
+          type: boolean
+          description: true si el libro estaba en el TBR mensual activo y se marcó como completado.
+
+    ReadingRecordPatchedResponse:
+      type: object
+      required:
+        - reading
+        - book
+      properties:
+        reading:
+          $ref: '#/components/schemas/ReadingRecordResource'
+        book:
+          type: object
+          required:
+            - id
+            - page_count
+          properties:
+            id:
+              type: string
+              format: uuid
+            page_count:
+              type: [integer, 'null']
+              minimum: 0
+              description: Total de páginas del volumen; requerido por UC-03 para validar progreso.
+        meta:
+          $ref: '#/components/schemas/PatchSideEffectsMeta'
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+
+    UnprocessableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            code:
+              type: string
+              examples:
+                - PAGE_EXCEEDS_TOTAL
+                - PAGE_COUNT_REQUIRED
+                - INVALID_STATUS_FOR_PROGRESS
+```
+
+#### Reglas de negocio resumidas (servidor)
+
+| Origen | Regla |
+| --- | --- |
+| UC-03 | Si el cuerpo incluye `current_page`, el registro debe poder asociarse a un libro con `page_count` **no nulo** y debe cumplirse `current_page <= page_count`. |
+| UC-03 | Conviene exigir `status === leyendo` para aceptar solo progreso por página (si el libro está en otro estado, **422** `INVALID_STATUS_FOR_PROGRESS`). |
+| UC-02 | Al fijar `status: leido`, el backend actualiza KPIs / agregados; puede devolver `meta.openCompletionModal: true` para forzar o sugerir UC-04 en cliente. |
+| UC-02 / UC-05 | Si el libro está en el TBR del mes activo, al pasar a `leido` el backend marca el ítem completado y puede indicar `meta.tbrAutoCompleted: true`. |
+
+### Ejemplos `PATCH /v1/books/{bookId}/reading-record` (JSON)
+
+**1 · Actualizar página actual (UC-03)** — libro en `leyendo`, `page_count` del libro = 304:
+
+Request:
+
+```json
+{
+  "current_page": 142
+}
+```
+
+Response — `200 OK` (`progress_percent` ≈ 46,71 %):
+
+```json
+{
+  "reading": {
+    "book_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "leyendo",
+    "current_page": 142,
+    "progress_percent": "46.71",
+    "rating": null,
+    "read_format": null,
+    "started_on": "2026-03-20",
+    "finished_on": null,
+    "updated_at": "2026-04-11T16:05:00.000Z"
+  },
+  "book": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "page_count": 304
+  }
+}
+```
+
+**2 · Marcar como leído (UC-02)** — misma obra; opcionalmente se envía `finished_on` (si no, el servidor puede usar la fecha del día):
+
+Request:
+
+```json
+{
+  "status": "leido",
+  "finished_on": "2026-04-11"
+}
+```
+
+Response — `200 OK` (el servidor puede alinear `current_page` con `page_count` al cerrar; metadatos UC-04 aún null hasta el modal; pistas de efectos UC-02/UC-05):
+
+```json
+{
+  "reading": {
+    "book_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "leido",
+    "current_page": 304,
+    "progress_percent": "100.00",
+    "rating": null,
+    "read_format": null,
+    "started_on": "2026-03-20",
+    "finished_on": "2026-04-11",
+    "updated_at": "2026-04-11T16:08:22.000Z"
+  },
+  "book": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "page_count": 304
+  },
+  "meta": {
+    "openCompletionModal": true,
+    "tbrAutoCompleted": true
+  }
+}
+```
+
+### OpenAPI 3.1 · `GET /stats`
+
+Agregados para **Reading Stats** y **Home** (**UC-07**), calculados en el módulo NestJS **`stats`** (**StatsService**): KPIs del periodo, distribuciones reutilizables para gráficos y **insights automáticos** (criterio UC-07: ≥3 por periodo con datos; **User Story 4**: libros, páginas, gráfico por géneros; **User Story 5**: tendencias, comparativa vs periodo anterior, género dominante). La ventana temporal se elige con `period` y los parámetros asociados (**mes**, **año natural** o **rango personalizado**). Solo cuenta lecturas con `reading_records.status = leido` y `finished_on` dentro del intervalo `[start, end]` (fechas inclusivas en TZ de la usuaria o UTC documentado en implementación).
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Reading Analytics Platform API (fragmento)
+  version: 0.1.0
+
+paths:
+  /stats:
+    get:
+      operationId: getReadingStats
+      summary: KPIs, distribuciones e insights para un periodo
+      description: >
+        UC-07: libros leídos, páginas totales, rating medio (libros puntuados), distribución por género,
+        formato predominante (derivado de la distribución por `read_format`).
+        El cliente envía uno de los tres modos de periodo; el servidor devuelve `period.resolved`
+        con límites normalizados para cache y trazabilidad.
+      tags:
+        - Stats
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/StatsPeriodType'
+          description: >
+            `month` requiere `year` + `month`; `year` requiere `year`;
+            `custom` requiere `from` + `to` (fechas ISO 8601 `date`).
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Estadísticas calculadas para la usuaria autenticada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingStatsResponse'
+        '400':
+          description: Parámetros de query incompletos o combinación inválida para el `period` elegido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No autenticada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Rango temporal inválido (`from` posterior a `to`) o ventana excesiva según política del producto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    StatsPeriodType:
+      type: string
+      enum:
+        - month
+        - year
+        - custom
+
+    ResolvedStatsPeriod:
+      type: object
+      required:
+        - type
+        - startDate
+        - endDate
+      properties:
+        type:
+          $ref: '#/components/schemas/StatsPeriodType'
+        startDate:
+          type: string
+          format: date
+          description: Inicio inclusivo del periodo resuelto.
+        endDate:
+          type: string
+          format: date
+          description: Fin inclusivo del periodo resuelto.
+        label:
+          type: string
+          description: Etiqueta legible para la UI (p. ej. «Abril 2026», «2026», «1 ene – 31 mar 2026»).
+
+    DistributionBucket:
+      type: object
+      required:
+        - label
+        - count
+        - share
+      additionalProperties: false
+      properties:
+        label:
+          type: string
+          description: Etiqueta del segmento (género, formato localizado, etc.).
+        count:
+          type: integer
+          minimum: 0
+          description: Número de libros en el segmento.
+        share:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Proporción respecto a `basisCount` de la distribución padre (0–1).
+
+    CountDistribution:
+      type: object
+      required:
+        - basisCount
+        - buckets
+      additionalProperties: false
+      description: >
+        Distribución reutilizable: mismos campos para reparto por género (metadatos `books.genre`)
+        y por formato de lectura (`reading_records.read_format`).
+      properties:
+        basisCount:
+          type: integer
+          minimum: 0
+          description: Libros que entran en el cálculo (p. ej. con género conocido o con formato informado).
+        unknownCount:
+          type: integer
+          minimum: 0
+          description: Libros del periodo excluidos del gráfico por dato ausente (opcional).
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionBucket'
+
+    ReadingStatsKpis:
+      type: object
+      required:
+        - booksRead
+        - totalPagesRead
+        - ratedBooksCount
+        - averageRating
+        - genreDistribution
+        - formatDistribution
+        - predominantReadFormat
+      properties:
+        booksRead:
+          type: integer
+          minimum: 0
+          description: Libros marcados como leídos con `finished_on` en el periodo (UC-07).
+        totalPagesRead:
+          type: integer
+          minimum: 0
+          description: Suma de `books.page_count` de esos libros (valores nulos tratados como 0 o excluidos según implementación; documentar en release notes).
+        ratedBooksCount:
+          type: integer
+          minimum: 0
+        averageRating:
+          anyOf:
+            - type: number
+              minimum: 1
+              maximum: 5
+            - type: 'null'
+          description: Media sobre libros con `rating` no nulo; `null` si no hay ninguno.
+        genreDistribution:
+          $ref: '#/components/schemas/CountDistribution'
+        formatDistribution:
+          $ref: '#/components/schemas/CountDistribution'
+        predominantReadFormat:
+          anyOf:
+            - type: string
+              enum:
+                - fisico
+                - ebook
+                - audio
+            - type: 'null'
+          description: Moda de `read_format` en el periodo; `null` si todo es desconocido.
+
+    StatsInsight:
+      type: object
+      required:
+        - id
+        - kind
+        - title
+        - body
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - volume_delta
+            - genre_trend
+            - format_mix
+            - pages_milestone
+            - rating_pattern
+            - other
+          description: Clasificación estable para analytics y plantillas de UI (US5).
+        title:
+          type: string
+        body:
+          type: string
+          description: Texto listo para mostrar; puede incluir cifras ya formateadas.
+        data:
+          type: object
+          additionalProperties: true
+          description: >
+            Métricas estructuradas opcionales (p. ej. `deltaPercent` vs mes anterior, `dominantGenre`, `share`).
+
+    ReadingStatsResponse:
+      type: object
+      required:
+        - period
+        - kpis
+        - insights
+      properties:
+        period:
+          $ref: '#/components/schemas/ResolvedStatsPeriod'
+        kpis:
+          $ref: '#/components/schemas/ReadingStatsKpis'
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsInsight'
+          description: >
+            UC-07 / US5: con datos suficientes el producto entrega al menos tres insights;
+            en periodos vacíos puede ser lista vacía.
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+```
+
+#### Parámetros de periodo (resumen)
+
+| `period` | Query obligatoria | `ResolvedStatsPeriod` |
+| --- | --- | --- |
+| `month` | `year`, `month` (1–12) | Primer y último día de ese mes calendario. |
+| `year` | `year` | Del 1 de enero al 31 de diciembre de ese año. |
+| `custom` | `from`, `to` | Intervalo inclusivo; el servidor normaliza orden y valida `from <= to`. |
+
+### Ejemplo · `GET /v1/stats` (request y response)
+
+**Request** (periodo tipo mes — misma semántica que el filtro de US4):
+
+```http
+GET /v1/stats?period=month&year=2026&month=4 HTTP/1.1
+Host: api.example.com
+Authorization: Bearer <jwt>
+Accept: application/json
+```
+
+**Response** — `200 OK` (KPIs UC-07, distribuciones vía `CountDistribution`, **cuatro** insights automáticos alineados con US5: ritmo vs mes anterior, género dominante, mix de formatos, hito de páginas):
+
+```json
+{
+  "period": {
+    "type": "month",
+    "startDate": "2026-04-01",
+    "endDate": "2026-04-30",
+    "label": "Abril 2026"
+  },
+  "kpis": {
+    "booksRead": 5,
+    "totalPagesRead": 1428,
+    "ratedBooksCount": 4,
+    "averageRating": 4.25,
+    "genreDistribution": {
+      "basisCount": 5,
+      "unknownCount": 0,
+      "buckets": [
+        { "label": "Fantasía", "count": 3, "share": 0.6 },
+        { "label": "Ciencia ficción", "count": 1, "share": 0.2 },
+        { "label": "Romance contemporáneo", "count": 1, "share": 0.2 }
+      ]
+    },
+    "formatDistribution": {
+      "basisCount": 5,
+      "unknownCount": 0,
+      "buckets": [
+        { "label": "ebook", "count": 3, "share": 0.6 },
+        { "label": "fisico", "count": 2, "share": 0.4 }
+      ]
+    },
+    "predominantReadFormat": "ebook"
+  },
+  "insights": [
+    {
+      "id": "f4c8b2a1-7e9d-4c3b-9f01-2a8b7c6d5e4f",
+      "kind": "volume_delta",
+      "title": "Subiste el ritmo respecto a marzo",
+      "body": "Este mes cerraste 5 libros frente a 3 en marzo: un +66,7 % de volumen.",
+      "data": {
+        "currentCount": 5,
+        "previousCount": 3,
+        "deltaPercent": 66.7,
+        "comparisonPeriod": "month",
+        "baselineLabel": "Marzo 2026"
+      }
+    },
+    {
+      "id": "a9e1d0c2-8b4f-4a2e-b7c1-0d1e2f3a4b5c",
+      "kind": "genre_trend",
+      "title": "La fantasía marca el mes",
+      "body": "3 de cada 5 lecturas (60 %) fueron fantasía: es tu tendencia principal del periodo.",
+      "data": {
+        "dominantGenre": "Fantasía",
+        "share": 0.6,
+        "count": 3
+      }
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9c0d-e1f2-a3b4c5d6e7f8",
+      "kind": "format_mix",
+      "title": "Predominio digital",
+      "body": "El 60 % de tus lecturas fueron en ebook; el físico representa el 40 % restante.",
+      "data": {
+        "predominantReadFormat": "ebook",
+        "ebookShare": 0.6,
+        "fisicoShare": 0.4
+      }
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8b9c-0d1e-f2a3b4c5d6e7",
+      "kind": "pages_milestone",
+      "title": "Más de 1.400 páginas en un mes",
+      "body": "Sumaste 1.428 páginas leídas en abril: un buen indicador de constancia para tus KPIs del Home.",
+      "data": {
+        "totalPagesRead": 1428,
+        "booksRead": 5
+      }
+    }
+  ]
+}
+```
+
+**Otros periodos (misma ruta, distintos query params)**
+
+- Año natural: `GET /v1/stats?period=year&year=2026`
+- Rango personalizado: `GET /v1/stats?period=custom&from=2026-01-15&to=2026-04-11`
 
 ---
 
