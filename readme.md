@@ -389,7 +389,7 @@ erDiagram
   }
 
   USER_PROFILES {
-    uuid user_id PK_FK "FK → users.id ON DELETE CASCADE"
+    uuid user_id PK "PK; FK → users.id ON DELETE CASCADE"
     varchar display_name "NULL permitido"
     text avatar_url "NULL"
     jsonb preferences "NOT NULL DEFAULT '{}'; tema, densidad UI, defaults de stats"
@@ -417,7 +417,7 @@ erDiagram
   }
 
   READING_RECORDS {
-    uuid book_id PK_FK "FK → books.id ON DELETE CASCADE; 1 registro por libro"
+    uuid book_id PK "PK; FK → books.id ON DELETE CASCADE; 1 registro por libro"
     varchar status "NOT NULL; CHECK IN leyendo|leido|dnf|pendiente (UC-02)"
     integer current_page "NULL; obligatorio lógico si status=leyendo y hay page_count (UC-03)"
     numeric progress_percent "NULL o GENERATED; (current_page/page_count)*100"
@@ -436,8 +436,8 @@ erDiagram
   }
 
   BOOK_TAGS {
-    uuid book_id PK_FK "FK → books.id ON DELETE CASCADE"
-    uuid tag_id PK_FK "FK → tags.id ON DELETE CASCADE"
+    uuid book_id PK "PK compuesta; FK → books.id ON DELETE CASCADE"
+    uuid tag_id PK "PK compuesta; FK → tags.id ON DELETE CASCADE"
     timestamptz created_at "NOT NULL DEFAULT now()"
   }
 
