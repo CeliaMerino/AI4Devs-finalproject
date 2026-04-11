@@ -371,12 +371,372 @@ La accesibilidad **WCAG 2.1/2.2 AA** se cubre en **diseño y QA** (contraste, fo
 
 ### **3.1. Diagrama del modelo de datos:**
 
-> Recomendamos usar mermaid para el modelo de datos, y utilizar todos los parámetros que permite la sintaxis para dar el máximo detalle, por ejemplo las claves primarias y foráneas.
+Modelo lógico **PostgreSQL** alineado con el PRD: biblioteca por usuaria, registro de lectura 1:1 por libro, TBR mensual único por mes, metas anuales e histórico de progreso por sesiones.
 
+![Diagrama entidad–relación del modelo de datos (Reading Analytics Platform)](documents/data_model.png)
+
+```mermaid
+erDiagram
+  %% === Reading Analytics Platform · PostgreSQL logical model ===
+  %% PK/FK and types as implemented names; CHECK/UNIQUE as comments on fields where relevant.
+
+  USERS {
+    uuid id PK "gen_random_uuid()"
+    varchar email UK "UNIQUE; NOT NULL si login local"
+    varchar password_hash "NULL si solo OAuth/SSO"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+  }
+
+  USER_PROFILES {
+    uuid user_id PK_FK "FK → users.id ON DELETE CASCADE"
+    varchar display_name "NULL permitido"
+    text avatar_url "NULL"
+    jsonb preferences "NOT NULL DEFAULT '{}'; tema, densidad UI, defaults de stats"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+  }
+
+  BOOKS {
+    uuid id PK "gen_random_uuid()"
+    uuid user_id FK "FK → users.id ON DELETE CASCADE; índice por usuaria"
+    text title "NOT NULL"
+    text authors "NOT NULL; texto o JSON según convención de API"
+    varchar isbn_13 "NULL"
+    varchar isbn_10 "NULL"
+    text cover_image_url "NULL"
+    integer page_count "NULL; CHECK ≥ 0 si NOT NULL"
+    varchar genre "NULL; género principal o para gráficos rápidos"
+    varchar series_name "NULL; UC-09 saga"
+    smallint publication_year "NULL"
+    varchar data_source "NOT NULL; open_library|google_books|goodreads|manual"
+    varchar external_provider_id "NULL; id en fuente externa"
+    text notes "NULL; edición manual UC-01"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+  }
+
+  READING_RECORDS {
+    uuid book_id PK_FK "FK → books.id ON DELETE CASCADE; 1 registro por libro"
+    varchar status "NOT NULL; CHECK IN leyendo|leido|dnf|pendiente (UC-02)"
+    integer current_page "NULL; obligatorio lógico si status=leyendo y hay page_count (UC-03)"
+    numeric progress_percent "NULL o GENERATED; (current_page/page_count)*100"
+    smallint rating "NULL; CHECK 1–5 (UC-04)"
+    varchar read_format "NULL; fisico|ebook|audio (UC-04)"
+    date started_on "NULL"
+    date finished_on "NULL; clave para stats por mes/año (UC-07)"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+  }
+
+  TAGS {
+    uuid id PK "gen_random_uuid()"
+    uuid user_id FK "FK → users.id ON DELETE CASCADE"
+    varchar name "NOT NULL; UNIQUE(user_id, lower(name)) (UC-04)"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+  }
+
+  BOOK_TAGS {
+    uuid book_id PK_FK "FK → books.id ON DELETE CASCADE"
+    uuid tag_id PK_FK "FK → tags.id ON DELETE CASCADE"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+  }
+
+  MONTHLY_TBR_LISTS {
+    uuid id PK "gen_random_uuid()"
+    uuid user_id FK "FK → users.id ON DELETE CASCADE"
+    smallint year "NOT NULL"
+    smallint month "NOT NULL; CHECK 1–12"
+    varchar list_status "NOT NULL DEFAULT active; active|archived opcional"
+    boolean auto_created "NOT NULL DEFAULT false; job día previo al mes (UC-05)"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+    %% UNIQUE(user_id, year, month) — como máximo un TBR por mes (UC-05)
+  }
+
+  TBR_ENTRIES {
+    uuid id PK "gen_random_uuid()"
+    uuid monthly_tbr_id FK "FK → monthly_tbr_lists.id ON DELETE CASCADE"
+    uuid book_id FK "FK → books.id ON DELETE CASCADE"
+    integer sort_order "NOT NULL; drag and drop (UC-05)"
+    boolean completed "NOT NULL DEFAULT false; auto al pasar a leido (UC-02/05)"
+    timestamptz completed_at "NULL"
+    timestamptz added_at "NOT NULL DEFAULT now()"
+    %% UNIQUE(monthly_tbr_id, book_id) — un libro una vez por lista
+  }
+
+  ANNUAL_READING_GOALS {
+    uuid id PK "gen_random_uuid()"
+    uuid user_id FK "FK → users.id ON DELETE CASCADE"
+    smallint year "NOT NULL"
+    integer target_book_count "NOT NULL; CHECK > 0 (UC-06 / US3)"
+    timestamptz created_at "NOT NULL DEFAULT now()"
+    timestamptz updated_at "NOT NULL DEFAULT now()"
+    %% UNIQUE(user_id, year) — una meta activa por año
+  }
+
+  READING_SESSIONS {
+    uuid id PK "gen_random_uuid()"
+    uuid book_id FK "FK → books.id ON DELETE CASCADE"
+    integer page_at_session "NOT NULL; CHECK ≥ 1"
+    timestamptz recorded_at "NOT NULL DEFAULT now()"
+    varchar source "NULL; manual|import|sync"
+    %% Histórico de progreso / series temporales (UC-03); índice (book_id, recorded_at)
+  }
+
+  %% --- Cardinalidades ---
+  USERS ||--|| USER_PROFILES : "perfil 1:1"
+  USERS ||--o{ BOOKS : "biblioteca"
+  BOOKS ||--|| READING_RECORDS : "registro lectura 1:1"
+  USERS ||--o{ TAGS : "etiquetas propias"
+  BOOKS ||--o{ BOOK_TAGS : "asignación"
+  TAGS ||--o{ BOOK_TAGS : "asignación"
+  USERS ||--o{ MONTHLY_TBR_LISTS : "TBR por mes"
+  MONTHLY_TBR_LISTS ||--o{ TBR_ENTRIES : "entradas ordenadas"
+  BOOKS ||--o{ TBR_ENTRIES : "libro en lista"
+  USERS ||--o{ ANNUAL_READING_GOALS : "metas anuales"
+  BOOKS ||--o{ READING_SESSIONS : "histórico páginas"
+```
 
 ### **3.2. Descripción de entidades principales:**
 
-> Recuerda incluir el máximo detalle de cada entidad, como el nombre y tipo de cada atributo, descripción breve si procede, claves primarias y foráneas, relaciones y tipo de relación, restricciones (unique, not null…), etc.
+La nomenclatura de tablas coincide con el diagrama de la §3.1 (`snake_case` en PostgreSQL). Donde el enunciado usa un nombre de dominio (p. ej. **ReadingEntry**), se indica la tabla física **`reading_records`**.
+
+---
+
+#### 1. User (`users` + `user_profiles`)
+
+Identidad de la usuaria y perfil ampliado (preferencias, tema, avatar). En el producto, casi toda consulta está acotada por `user_id` (aislamiento entre bibliotecas, UC-09).
+
+**Tabla `users`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador único de la cuenta. |
+| `email` | `VARCHAR(320)` | `UNIQUE`, `NOT NULL` si hay login local | Contacto e inicio de sesión (PRD backend Nest). |
+| `password_hash` | `VARCHAR(255)` | `NULL` permitido | Hash de contraseña; **opcional** si el acceso es solo OAuth/SSO (futuro). |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Alta de cuenta. |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última modificación de fila (actualizar en cada `UPDATE`). |
+
+**Tabla `user_profiles`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `user_id` | `UUID` | `PK`, `FK → users.id`, `ON DELETE CASCADE`, `NOT NULL` | Misma clave que la usuaria; perfil 1:1. |
+| `display_name` | `VARCHAR(120)` | `NULL` permitido | Nombre mostrado; **opcional** hasta que la usuaria personalice el perfil. |
+| `avatar_url` | `TEXT` | `NULL` permitido | Imagen de perfil; **opcional**. |
+| `preferences` | `JSONB` | `NOT NULL`, `DEFAULT '{}'` | Tema visual, densidad de UI, periodo por defecto en stats (PRD *Perfil / Ajustes*). |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Creación del perfil. |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última actualización. |
+
+**Claves y relaciones**
+
+- **PK `users`:** `id`, generación **UUID v4** vía `gen_random_uuid()` (estándar en PostgreSQL 13+).
+- **PK `user_profiles`:** `user_id` (también **FK** a `users.id`).
+- **Relaciones:** `users` **1:1** `user_profiles`; `users` **1:N** con `books`, `tags`, `monthly_tbr_lists`, `annual_reading_goals` (poseedora de datos).
+
+**Índices recomendados**
+
+- `UNIQUE` en `users.email` (ya implica índice).
+- Ninguno adicional obligatorio en `user_profiles` más allá del PK; opcional `(preferences)` con **GIN** solo si se filtra por claves JSON de forma frecuente.
+
+---
+
+#### 2. Book (`books`)
+
+Metadatos de un volumen en la **biblioteca de una usuaria** (no catálogo global). Alta por búsqueda APIs o manual (**UC-01**); edición de metadatos tras selección aproximada; importación masiva (**UC-08**).
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador del libro en la biblioteca. |
+| `user_id` | `UUID` | `FK → users.id`, `ON DELETE CASCADE`, `NOT NULL` | Propietaria del registro. |
+| `title` | `TEXT` | `NOT NULL` | Título de la edición (UC-01). |
+| `authors` | `TEXT` | `NOT NULL` | Autoras/os; texto plano o JSON según convenio de mapeo desde Open Library / Google Books. |
+| `isbn_13` | `VARCHAR(13)` | `NULL` | ISBN-13 si la fuente lo aporta (**opcional** en entrada manual o datos incompletos). |
+| `isbn_10` | `VARCHAR(10)` | `NULL` | ISBN-10; **opcional**. |
+| `cover_image_url` | `TEXT` | `NULL` | URL de portada; **opcional** si no hay imagen en la API. |
+| `page_count` | `INTEGER` | `NULL`, `CHECK (page_count IS NULL OR page_count >= 0)` | Total de páginas; **opcional** hasta completarlo (UC-03 exige total para calcular %). |
+| `genre` | `VARCHAR(100)` | `NULL` | Género principal para gráficos (UC-07); **opcional** si la fuente no lo devuelve. |
+| `series_name` | `VARCHAR(255)` | `NULL` | Saga / serie (**UC-09** filtro); **opcional**. |
+| `publication_year` | `SMALLINT` | `NULL` | Año de publicación; **opcional**. |
+| `data_source` | `VARCHAR(32)` | `NOT NULL`, `CHECK` en valores permitidos | Origen: `open_library`, `google_books`, `goodreads`, `manual` (PRD *Data sources*). |
+| `external_provider_id` | `VARCHAR(128)` | `NULL` | Id en la fuente externa para reconciliar o reconsultar; **opcional** en manual puro. |
+| `notes` | `TEXT` | `NULL` | Notas de la usuaria o correcciones tras UC-01. |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Alta en biblioteca. |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última modificación de metadatos. |
+
+**Claves y relaciones**
+
+- **PK:** `id`, **UUID v4** con `gen_random_uuid()`.
+- **FK:** `user_id` → `users.id`.
+- **Relaciones:** **1:1** con `reading_records` (un registro de lectura por libro); **1:N** con `book_tags`, `tbr_entries`, `reading_sessions`; **N:M** con `tags` vía `book_tags`.
+
+**Índices recomendados**
+
+- `(user_id)` — listados Book Tracker, Library, Home (**UC-01**, **UC-09**).
+- `(user_id, title)` o **índice GIN** con `to_tsvector` sobre `title` + `authors` si la búsqueda texto libre es intensiva (**UC-09**).
+- Opcional `(user_id, genre)`, `(user_id, publication_year)` si los filtros del producto los usan como columnas discretas.
+
+---
+
+#### 3. ReadingEntry (`reading_records`)
+
+Registro de lectura de una usuaria **sobre un libro concreto** de su biblioteca: estado, progreso, rating, formato y fechas. Es la base de estadísticas (**UC-07**), meta anual (**UC-06**), TBR automático (**UC-05**) y KPIs del Home.
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `book_id` | `UUID` | `PK`, `FK → books.id`, `ON DELETE CASCADE`, `NOT NULL` | Libro al que pertenece el registro (1:1). |
+| `status` | `VARCHAR(20)` | `NOT NULL`, `CHECK` en `leyendo`, `leido`, `dnf`, `pendiente` | Estado de lectura (**UC-02**); al añadir libro suele ser `pendiente` (UC-01). |
+| `current_page` | `INTEGER` | `NULL`, `CHECK` coherente con `books.page_count` en aplicación | Página actual (**UC-03**); **opcional** si no está en lectura o aún no se informa. |
+| `progress_percent` | `NUMERIC(5,2)` | `NULL` o columna `GENERATED` | Porcentaje de avance; puede calcularse en app o con `STORED` si existen `current_page` y `page_count`. |
+| `rating` | `SMALLINT` | `NULL`, `CHECK (rating BETWEEN 1 AND 5)` | Valoración al cerrar como leído (**UC-04**); **opcional** porque la usuaria puede cerrar el modal sin guardar datos extra. |
+| `read_format` | `VARCHAR(20)` | `NULL`, `CHECK` en `fisico`, `ebook`, `audio` | Formato de lectura (**UC-04**); **opcional** por el mismo flujo de cierre anticipado del modal. |
+| `started_on` | `DATE` | `NULL` | Fecha de inicio de lectura; **opcional** (import o registro posterior). |
+| `finished_on` | `DATE` | `NULL` | Fecha de fin; **opcional** hasta marcar `leido` o completar UC-04; imprescindible para agregar por mes/año (**UC-07**, **UC-08** histórico). |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última actualización de estado o progreso. |
+
+**Claves y relaciones**
+
+- **PK:** `book_id` (reutiliza la FK como clave única del registro).
+- **FK:** `book_id` → `books.id`.
+- **Relaciones:** **1:1** con `books`; desde la usuaria es **1:N** (muchos libros, cada uno con su registro).
+
+**Índices recomendados**
+
+- El PK ya indexa `book_id`.
+- **Parcial** `(finished_on) WHERE status = 'leido'` o compuesto vía join: para agregaciones mensuales/anuales (**UC-07**, **UC-06**, **UC-10**).
+- `(status)` filtrado por `user_id` suele resolverse con join a `books` + índice `(user_id)` en `books`; opcional índice en `reading_records(status)` si el volumen es muy alto.
+
+---
+
+#### 4. Tag (`tags`) y BookTag (`book_tags`)
+
+Etiquetas **definidas por la usuaria** (**UC-04**, PRD *Tags*); la tabla pivote materializa la **N:M** entre libros y tags para filtros y búsqueda (**UC-09**).
+
+**Tabla `tags`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador de la etiqueta. |
+| `user_id` | `UUID` | `FK → users.id`, `ON DELETE CASCADE`, `NOT NULL` | Dueña del vocabulario de tags. |
+| `name` | `VARCHAR(80)` | `NOT NULL`, `UNIQUE (user_id, lower(name))` | Texto visible (p. ej. «cozy fantasy»); unicidad **case-insensitive** por usuaria. |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Creación (incl. alta al vuelo en el modal UC-04). |
+
+**Tabla `book_tags`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `book_id` | `UUID` | `PK`, `FK → books.id`, `ON DELETE CASCADE`, `NOT NULL` | Libro etiquetado. |
+| `tag_id` | `UUID` | `PK`, `FK → tags.id`, `ON DELETE CASCADE`, `NOT NULL` | Etiqueta aplicada. |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Momento de asociación. |
+
+**Claves y relaciones**
+
+- **PK `tags`:** `id` (**UUID v4**).
+- **PK `book_tags`:** compuesta `(book_id, tag_id)`.
+- **FK:** `tags.user_id` → `users.id`; `book_tags` → `books.id`, `tags.id`.
+- **Relaciones:** `users` **1:N** `tags`; `books` **N:M** `tags` a través de `book_tags`.
+
+**Índices recomendados**
+
+- `UNIQUE (user_id, lower(name))` en `tags` (definir con índice único funcional en PostgreSQL, p. ej. en `lower(name)`).
+- `book_tags(tag_id)` — listar libros por etiqueta (**UC-09**).
+- `book_tags(book_id)` — cargar tags de un libro en ficha y export.
+
+---
+
+#### 5. MonthlyTBR (`monthly_tbr_lists`) y TBREntry (`tbr_entries`)
+
+Lista **To Be Read** por mes y año: como máximo **una lista por usuaria y mes** (**UC-05**); entradas ordenadas (drag & drop) y marcado automático al pasar el libro a `leido` (**UC-02** / **UC-05**).
+
+**Tabla `monthly_tbr_lists`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador de la lista mensual. |
+| `user_id` | `UUID` | `FK → users.id`, `ON DELETE CASCADE`, `NOT NULL` | Propietaria. |
+| `year` | `SMALLINT` | `NOT NULL` | Año del TBR. |
+| `month` | `SMALLINT` | `NOT NULL`, `CHECK (month BETWEEN 1 AND 12)` | Mes (1–12). |
+| `list_status` | `VARCHAR(20)` | `NOT NULL`, `DEFAULT 'active'` | p. ej. `active` / `archived` si el producto distingue listas cerradas visualmente. |
+| `auto_created` | `BOOLEAN` | `NOT NULL`, `DEFAULT false` | `true` si la creó el job del día previo al mes (**UC-05**). |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Creación. |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última edición. |
+| — | — | `UNIQUE (user_id, year, month)` | **Restricción de negocio:** un solo TBR por mes. |
+
+**Tabla `tbr_entries`**
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador de la fila (útil para APIs y sync). |
+| `monthly_tbr_id` | `UUID` | `FK → monthly_tbr_lists.id`, `ON DELETE CASCADE`, `NOT NULL` | Lista a la que pertenece. |
+| `book_id` | `UUID` | `FK → books.id`, `ON DELETE CASCADE`, `NOT NULL` | Libro de la biblioteca incluido en el TBR. |
+| `sort_order` | `INTEGER` | `NOT NULL` | Orden de prioridad (**UC-05** drag & drop). |
+| `completed` | `BOOLEAN` | `NOT NULL`, `DEFAULT false` | Checklist; puede ponerse a `true` al marcar `leido` el libro. |
+| `completed_at` | `TIMESTAMPTZ` | `NULL` | Marca temporal del completado; **opcional** si solo se usa el booleano. |
+| `added_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Cuándo se añadió a la lista. |
+| — | — | `UNIQUE (monthly_tbr_id, book_id)` | Un mismo libro no se duplica en la misma lista. |
+
+**Claves y relaciones**
+
+- **PKs:** `id` en ambas tablas (**UUID v4**).
+- **FK:** `monthly_tbr_lists.user_id` → `users.id`; `tbr_entries` → `monthly_tbr_lists.id`, `books.id`.
+- **Relaciones:** `users` **1:N** `monthly_tbr_lists`; `monthly_tbr_lists` **1:N** `tbr_entries`; `books` **1:N** `tbr_entries` (el mismo libro puede aparecer en TBR de meses distintos).
+
+**Índices recomendados**
+
+- `UNIQUE (user_id, year, month)` en `monthly_tbr_lists`.
+- `tbr_entries(monthly_tbr_id, sort_order)` — renderizar la lista ordenada.
+- `tbr_entries(book_id)` — al marcar `leido`, localizar entradas abiertas a actualizar (**UC-05**).
+
+---
+
+#### 6. AnnualGoal (`annual_reading_goals`)
+
+Objetivo numérico de libros a leer en un año calendario (**UC-06**, historia de usuario 3). El progreso (libros `leido` en ese año) se calcula desde `reading_records` + `finished_on`, no se duplica aquí.
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador de la meta (útil si en el futuro hay historial de metas). |
+| `user_id` | `UUID` | `FK → users.id`, `ON DELETE CASCADE`, `NOT NULL` | Usuaria que define la meta. |
+| `year` | `SMALLINT` | `NOT NULL` | Año objetivo. |
+| `target_book_count` | `INTEGER` | `NOT NULL`, `CHECK (target_book_count > 0)` | Número de libros meta (p. ej. 50). |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Primera definición. |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Última edición (**UC-06** permite cambiar la meta en cualquier momento). |
+| — | — | `UNIQUE (user_id, year)` | Una meta por usuaria y año. |
+
+**Claves y relaciones**
+
+- **PK:** `id` (**UUID v4**).
+- **FK:** `user_id` → `users.id`.
+- **Relaciones:** `users` **1:N** `annual_reading_goals` (en la práctica una fila activa por año gracias al `UNIQUE`).
+
+**Índices recomendados**
+
+- `UNIQUE (user_id, year)` — lectura O(1) del widget Home / Goals.
+
+---
+
+#### 7. ReadingSession (`reading_sessions`)
+
+Histórico de **instantes de progreso por página** (**UC-03**): series temporales para gráficos de ritmo, auditoría de cambios y posibles insights (**UC-07** / US5). **UC-08** puede generar sesiones sintéticas con `source = import` si el archivo aporta fechas de progreso.
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | `UUID` | `PK`, `NOT NULL`, `DEFAULT gen_random_uuid()` | Identificador del evento. |
+| `book_id` | `UUID` | `FK → books.id`, `ON DELETE CASCADE`, `NOT NULL` | Libro cuyo progreso se registra. |
+| `page_at_session` | `INTEGER` | `NOT NULL`, `CHECK (page_at_session >= 1)` | Página alcanzada en ese momento. |
+| `recorded_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT now()` | Marca temporal del registro. |
+| `source` | `VARCHAR(20)` | `NULL`, valores p. ej. `manual`, `import`, `sync` | Origen del dato; **opcional** si todo es manual en MVP. |
+
+**Claves y relaciones**
+
+- **PK:** `id` (**UUID v4**).
+- **FK:** `book_id` → `books.id`.
+- **Relaciones:** `books` **1:N** `reading_sessions`.
+
+**Índices recomendados**
+
+- `(book_id, recorded_at DESC)` — último progreso y línea temporal por libro (**UC-03**, Home).
+- Opcional `(recorded_at)` particionado por mes si el volumen de eventos crece mucho.
 
 ---
 
