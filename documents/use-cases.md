@@ -79,6 +79,7 @@ La usuaria puede editar los metadatos manualmente tras seleccionar el resultado 
 
 ![Diagrama de secuencia — UC-01 Buscar y añadir un libro](UC-01.png)
 
+```plantuml
 @startuml
 title Caso crítico: Buscar y añadir libro
 
@@ -141,6 +142,7 @@ Fallback obligatorio para
 maximizar tasa de éxito.
 end note
 @enduml
+```
 
 ---
 
@@ -202,6 +204,7 @@ Al marcarlo como `Leído`, el sistema lo marca automáticamente como completado 
 
 ![Diagrama de secuencia — UC-02 Registrar estado de lectura](UC-02.png)
 
+```plantuml
 @startuml
 title UC-02 · Registrar estado de lectura
 
@@ -234,6 +237,7 @@ BS --> UI : estado actualizado
 UI --> U : cambio reflejado
 
 @enduml
+```
 
 ---
 
@@ -288,6 +292,7 @@ El sistema muestra un aviso de validación e impide guardar el valor.
 
 ![Diagrama de secuencia — UC-03 Actualizar progreso de lectura](UC-03.png)
 
+```plantuml
 @startuml
 title UC-03 · Actualizar progreso de lectura
 
@@ -320,6 +325,7 @@ else totalPages existe
 end
 
 @enduml
+```
 
 ---
 
@@ -377,6 +383,7 @@ El libro queda en estado `Leído` pero sin rating, formato ni tags. La usuaria p
 
 ![Diagrama de secuencia — UC-04 Puntuar y etiquetar un libro](UC-04.png)
 
+```plantuml
 @startuml
 title UC-04 · Puntuar y etiquetar libro
 
@@ -406,6 +413,7 @@ RS --> UI : confirmación guardado
 UI --> U : review registrada
 
 @enduml
+```
 
 ---
 
@@ -460,6 +468,7 @@ La usuaria puede buscarlo y añadirlo directamente a la biblioteca y al TBR en e
 
 ![Diagrama de secuencia — UC-05 Gestionar TBR mensual](UC-05.png)
 
+```plantuml
 @startuml
 title UC-05 · Gestionar TBR mensual
 
@@ -495,6 +504,8 @@ alt libro no existe en biblioteca
 end
 
 @enduml
+```
+
 ---
 
 ## UC-06 · Definir y seguir meta anual
@@ -551,6 +562,7 @@ El sistema muestra el número de libros adicionales por semana/mes necesarios pa
 
 ![Diagrama de secuencia — UC-06 Definir y seguir meta anual](UC-06.png)
 
+```plantuml
 @startuml
 title UC-06 · Meta anual
 
@@ -579,6 +591,8 @@ alt nuevo libro leído
 end
 
 @enduml
+```
+
 ---
 
 ## UC-07 · Ver estadísticas básicas
@@ -632,6 +646,7 @@ Puede activar la vista de comparativa para ver ambos periodos en paralelo (funci
 
 ![Diagrama de secuencia — UC-07 Ver estadísticas básicas](UC-07.png)
 
+```plantuml
 @startuml
 title UC-07 · Estadísticas básicas
 
@@ -659,6 +674,8 @@ alt cambio de periodo
 end
 
 @enduml
+```
+
 ---
 
 ## UC-08 · Importar datos históricos
@@ -721,6 +738,7 @@ El sistema alerta sobre los duplicados y permite a la usuaria elegir si sobreesc
 
 ![Diagrama de secuencia — UC-08 Importar datos históricos](UC-08.png)
 
+```plantuml
 @startuml
 title UC-08 · Importar datos históricos
 
@@ -757,6 +775,8 @@ else válido
 end
 
 @enduml
+```
+
 ---
 
 ## UC-09 · Buscar y filtrar en la biblioteca
@@ -818,6 +838,7 @@ El sistema muestra un mensaje claro indicando que no hay resultados y sugiere am
 
 ![Diagrama de secuencia — UC-09 Buscar y filtrar en la biblioteca](UC-09.png)
 
+```plantuml
 @startuml
 title UC-09 · Buscar y filtrar biblioteca
 
@@ -841,6 +862,7 @@ alt sin resultados
 end
 
 @enduml
+```
 
 ---
 
@@ -901,6 +923,7 @@ Puede seleccionar qué estadísticas mostrar u ocultar antes de generar la image
 
 ![Diagrama de secuencia — UC-10 Exportar story de wrap-up](UC-10.png)
 
+```plantuml
 @startuml
 title UC-10 · Exportar wrap-up
 
@@ -938,6 +961,8 @@ end
 UI --> U : descarga lista
 
 @enduml
+```
+
 ---
 
 *Documento generado en abril 2026 · Reading Analytics Platform v1.0*
