@@ -429,40 +429,47 @@ UI --> U : review registrada
 
 ### Descripción
 
-La usuaria crea y gestiona su lista TBR (To Be Read) mensual: añade libros, los reordena por prioridad mediante drag & drop y el sistema los marca automáticamente como completados cuando cambian a estado `Leído`.
+La usuaria crea y gestiona sus listas TBR (To Be Read) **por mes**: añade libros, los reordena por prioridad mediante drag & drop y el sistema los marca automáticamente como completados cuando pasan a estado `Leído`. Puede **editar en cualquier momento del año** cualquier TBR (pasado, en curso o futuro) y **todos los datos** de esa lista, sin obligación de llevar el seguimiento en tiempo real.
+
+La lista de un mes **no tiene por existir hasta que haga falta**. Si aún no existe, el sistema puede **crearla automáticamente el día anterior al inicio de ese mes**; si la usuaria **ya la creó a mano** (en cualquier fecha, incluso con antelación), **no** se vuelve a crear por el proceso automático. La usuaria puede **crear manualmente** el TBR de cualquier mes cuando quiera (por ejemplo, **planificar de una vez los 12 meses** del año siguiente).
 
 ### Precondiciones
 
 - La usuaria tiene sesión iniciada.
-- Existen libros en la biblioteca (con cualquier estado) para poder añadirlos al TBR.
+- Para añadir entradas con libros ya catalogados, conviene tener esos libros en la biblioteca (con cualquier estado); si no, aplica el flujo de alta desde búsqueda (UC-01).
 
 ### Flujo principal
 
-1. La usuaria accede a **Lists** y selecciona el **TBR mensual** activo.
-2. El sistema crea automáticamente la lista del mes en curso si no existe.
+1. La usuaria accede a **Lists** y elige el **TBR mensual** del mes que desea (actual u otro mediante navegación por mes/año).
+2. Si ese mes **aún no tiene lista**, puede **crearla manualmente** en el acto; en caso contrario, si llega el **día anterior al inicio de ese mes** y la lista **sigue sin existir**, el sistema **crea una lista vacía** automáticamente. Si la lista **ya existe** (por creación manual previa), el sistema **no** duplica ni sobrescribe.
 3. La usuaria añade libros a la lista desde la búsqueda o desde su biblioteca.
 4. La usuaria reordena los libros por prioridad mediante **drag & drop**.
-5. A medida que lee, los libros marcados como `Leído` se marcan automáticamente como completados en la lista.
+5. A medida que lee, los libros marcados como `Leído` se marcan automáticamente como completados en la lista cuando corresponda (p. ej. si el libro está en el TBR del mes en curso; ver UC-02).
 
 ### Flujos alternativos
 
-**2a · La usuaria quiere gestionar el TBR de un mes anterior:**
-Puede navegar a meses pasados para consultarlos, pero no modificarlos.
+**2a · Planificación anticipada:** La usuaria crea manualmente los TBR de uno o varios meses futuros (p. ej. los doce del año siguiente). Esas listas quedan persistidas; cuando llegue el día anterior a cada mes, **no** se ejecutará creación automática porque el TBR ya existe.
+
+**2b · Retraso o ajuste sobre meses pasados:** La usuaria abre un **mes anterior** y **edita libros, orden y cualquier dato** de la lista para alinearla con lo que realmente leyó o con cómo quiere documentarlo a posteriori.
 
 **3a · El libro no está en la biblioteca:**
 La usuaria puede buscarlo y añadirlo directamente a la biblioteca y al TBR en el mismo flujo (desencadena UC-01).
 
 ### Postcondiciones
 
-- La lista TBR del mes refleja los libros seleccionados y su orden de prioridad.
+- El TBR del mes consultado refleja los libros seleccionados y su orden de prioridad (tras guardar cambios).
 - Los libros completados aparecen visualmente diferenciados (tachados o con check).
 - El progreso del TBR es visible desde Home.
+- Las listas de meses pasados **permanecen editables**; no hay cierre definitivo por calendario.
 
 ### Criterios de aceptación
 
-- La lista mensual se crea automáticamente al inicio de cada mes.
+- Para cada mes, **como mucho existe un** TBR mensual; si la usuaria ya lo creó a mano, el job o regla automática del **día anterior al inicio del mes** **no** crea otro.
+- Si un mes **no** tiene TBR cuando llega ese día previo al inicio del mes, el sistema **crea** el TBR vacío automáticamente.
+- La usuaria puede **crear manualmente** el TBR de **cualquier** mes en **cualquier** momento (incluida la planificación de varios meses o de un año completo).
+- **Cualquier** TBR (pasado, presente o futuro) admite **edición completa** de sus datos en cualquier momento del año.
 - El drag & drop funciona correctamente para reordenar.
-- Al marcar un libro como `Leído`, se marca automáticamente como completado en el TBR activo.
+- Al marcar un libro como `Leído`, se marca automáticamente como completado en el TBR cuando aplique la misma regla que en UC-02 (p. ej. TBR mensual activo).
 
 ### Diagrama UML
 
@@ -480,14 +487,19 @@ control "TBRService" as TS
 database "TBR DB" as DB
 control "BookService" as BS
 
-U -> UI : Accede a TBR mensual
-UI -> TS : getOrCreateMonthlyTBR()
+U -> UI : Accede a TBR mensual (mes elegido)
+UI -> TS : getOrCreateMonthlyTBR(mes)
 
-TS -> DB : buscar TBR mes actual
+TS -> DB : buscar TBR del mes
 
-alt no existe
-  TS -> DB : crear TBR mensual
+alt no existe y (creación manual ahora o job día previo al mes)
+  TS -> DB : crear TBR mensual vacío
 end
+
+note right of TS
+  Si ya existe (p. ej. creado a mano antes),
+  no se crea de nuevo automáticamente.
+end note
 
 DB --> TS : lista TBR
 
