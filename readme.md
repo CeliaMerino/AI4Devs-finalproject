@@ -17,8 +17,10 @@
 Celia Merino Valladolid
 
 ### **0.2. Nombre del proyecto:**
+Reading Analytics Platform
 
 ### **0.3. Descripción breve del proyecto:**
+Aplicación web desktop-first para lectoras intensivas que quieren registrar lecturas y obtener estadísticas avanzadas de forma visual y automatizada, sustituyendo hojas de cálculo como Excel. El foco es la analítica personal de libros leídos (dashboards, TBR, metas, wrap-ups e import/export), no una red social.
 
 ### **0.4. URL del proyecto:**
 
