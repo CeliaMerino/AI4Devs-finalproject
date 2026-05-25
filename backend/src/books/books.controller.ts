@@ -1,0 +1,52 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { BooksService } from './books.service';
+import { CatalogService } from './catalog/catalog.service';
+import { EditionCoversService } from './catalog/edition-covers.service';
+import { CatalogSearchQueryDto } from './dto/catalog-search-query.dto';
+import { EditionCoversQueryDto } from './dto/edition-covers.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { RequestWithUser } from '../auth/request-with-user';
+
+@Controller('books')
+@UseGuards(JwtAuthGuard)
+export class BooksController {
+  constructor(
+    private readonly booksService: BooksService,
+    private readonly catalogService: CatalogService,
+    private readonly editionCoversService: EditionCoversService,
+  ) {}
+
+  @Get()
+  list(@Req() req: RequestWithUser) {
+    return this.booksService.listForUser(req.user.userId);
+  }
+
+  @Get('catalog/covers')
+  getEditionCovers(@Query() query: EditionCoversQueryDto) {
+    return this.editionCoversService.getCovers(
+      query.data_source,
+      query.external_provider_id,
+      query.hint_cover_url,
+    );
+  }
+
+  @Get('catalog/search')
+  searchCatalog(@Query() query: CatalogSearchQueryDto) {
+    const limit = query.limit ?? 20;
+    return this.catalogService.search(query.q, limit);
+  }
+
+  @Post()
+  create(@Req() req: RequestWithUser, @Body() dto: CreateBookDto) {
+    return this.booksService.create(req.user.userId, dto);
+  }
+}
