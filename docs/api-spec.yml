@@ -1,0 +1,464 @@
+openapi: 3.0.3
+info:
+  title: Reading Analytics Platform API
+  description: |
+    REST API for personal reading tracking: library, catalog search, edition covers, and dev authentication.
+
+    - Base path: `/v1`
+    - JSON request/response bodies use **snake_case** field names
+    - Protected routes require `Authorization: Bearer <JWT>`
+    - Catalog integrates Open Library (primary) and Google Books (fallback when API key configured)
+  version: 0.1.0
+  contact:
+    name: Reading Analytics Platform
+
+servers:
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication (MVP dev login)
+  - name: Books
+    description: User library
+  - name: Catalog
+    description: External metadata search and covers (no persistence until book create)
+
+paths:
+  /auth/dev-login:
+    post:
+      summary: Dev login (local MVP)
+      description: Creates or finds user by email and returns JWT. No password in MVP.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DevLoginRequest'
+      responses:
+        '201':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevLoginResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /books:
+    get:
+      summary: List books for current user
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User library with reading status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Add book to library
+      description: |
+        Creates book and initial reading record (`pendiente`).
+        Rejects duplicates by `isbn_13` or (`data_source` + `external_provider_id`) per user.
+        May enrich `genre` / `page_count` from Open Library or Google Books when missing.
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookCreatedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Duplicate book in library
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDuplicateError'
+
+  /books/catalog/search:
+    get:
+      summary: Search external catalog
+      description: Queries Open Library first; may fall back to Google Books. Results are not stored.
+      tags: [Catalog]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search query (title, author, ISBN)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 40
+            default: 20
+      responses:
+        '200':
+          description: Catalog editions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /books/catalog/covers:
+    get:
+      summary: List cover options for a catalog edition
+      tags: [Catalog]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: data_source
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [open_library, google_books]
+        - name: external_provider_id
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 256
+        - name: hint_cover_url
+          in: query
+          schema:
+            type: string
+            format: uri
+            maxLength: 2048
+          description: Optional cover URL from search result to include as default/hint
+      responses:
+        '200':
+          description: Cover options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditionCoversResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+
+  schemas:
+    DevLoginRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: reader@example.com
+
+    DevLoginResponse:
+      type: object
+      required: [access_token, user]
+      properties:
+        access_token:
+          type: string
+        user:
+          type: object
+          required: [id, email]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+
+    DataSource:
+      type: string
+      enum: [open_library, google_books, goodreads, manual]
+
+    CatalogDataSource:
+      type: string
+      enum: [open_library, google_books]
+
+    ReadingStatus:
+      type: string
+      enum: [pendiente, leyendo, leido, dnf]
+
+    Book:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - authors
+        - data_source
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        authors:
+          type: string
+        isbn_13:
+          type: string
+          nullable: true
+        isbn_10:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+        page_count:
+          type: integer
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        series_name:
+          type: string
+          nullable: true
+        publication_year:
+          type: integer
+          nullable: true
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        external_provider_id:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BookListItem:
+      allOf:
+        - $ref: '#/components/schemas/Book'
+        - type: object
+          required: [reading_status]
+          properties:
+            reading_status:
+              $ref: '#/components/schemas/ReadingStatus'
+
+    CreateBookRequest:
+      type: object
+      required: [title, authors, data_source]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        authors:
+          type: string
+          minLength: 1
+        isbn_13:
+          type: string
+          nullable: true
+        isbn_10:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+        page_count:
+          type: integer
+          minimum: 0
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        series_name:
+          type: string
+          nullable: true
+        publication_year:
+          type: integer
+          minimum: 1000
+          maximum: 2100
+          nullable: true
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        external_provider_id:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    BookCreatedResponse:
+      type: object
+      required: [book, reading]
+      properties:
+        book:
+          $ref: '#/components/schemas/Book'
+        reading:
+          type: object
+          required: [book_id, status]
+          properties:
+            book_id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/ReadingStatus'
+
+    CatalogEdition:
+      type: object
+      required: [title, authors, data_source, external_provider_id]
+      properties:
+        title:
+          type: string
+        authors:
+          type: string
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+        page_count:
+          type: integer
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        isbn_13:
+          type: string
+          nullable: true
+        isbn_10:
+          type: string
+          nullable: true
+        data_source:
+          $ref: '#/components/schemas/CatalogDataSource'
+        external_provider_id:
+          type: string
+
+    CatalogSearchResponse:
+      type: object
+      required: [items, source]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogEdition'
+        source:
+          type: string
+          enum: [open_library, google_books, none]
+          description: Provider that satisfied the search
+
+    CoverOption:
+      type: object
+      required: [id, url]
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+          format: uri
+        label:
+          type: string
+          nullable: true
+
+    EditionCoversResponse:
+      type: object
+      required: [covers]
+      properties:
+        covers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverOption'
+        default_cover_id:
+          type: string
+          nullable: true
+
+    ErrorMessage:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorMessage'
+      example:
+        statusCode: 400
+        message: ['q must be longer than or equal to 2 characters']
+
+    BookDuplicateError:
+      type: object
+      required: [statusCode, message, code, existingBookId]
+      properties:
+        statusCode:
+          type: integer
+          example: 409
+        message:
+          type: string
+          example: Book already exists in your library
+        code:
+          type: string
+          example: BOOK_DUPLICATE
+        existingBookId:
+          type: string
+          format: uuid
