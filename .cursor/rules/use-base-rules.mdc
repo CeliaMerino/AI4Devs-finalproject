@@ -1,0 +1,14 @@
+---
+description: Load Reading Analytics Platform agent rules and product precedence
+alwaysApply: true
+---
+
+# Project rules (Cursor)
+
+Follow **[AGENTS.md](../../AGENTS.md)** at the repository root.
+
+**Product precedence:** [PRD.md](../../PRD.md) → [readme.md](../../readme.md) → [documents/](../../documents/) → code → [docs/](../../docs/) → `openspec/` → `ai-specs/`.
+
+**Engineering detail:** [docs/base-standards.md](../../docs/base-standards.md), [docs/backend-standards.md](../../docs/backend-standards.md), [docs/frontend-standards.md](../../docs/frontend-standards.md).
+
+Do not use Express, Prisma, or LTI/ATS patterns — this repo uses **NestJS**, **TypeORM**, and **Vite + React**.

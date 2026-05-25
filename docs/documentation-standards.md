@@ -6,8 +6,16 @@ alwaysApply: true
 # Rules and Patterns for documentation and AI specs
 
 ## Introduction
-Technical documentation applies to all the documentation relative to the project, such as the data model, README, API specs, and other MD docs that describe how the project is structured, runs, and operates.
-AI specs refers to the documents that explain AI agents how to behave, document, plan, code, etc, which includes team agreements, standards and conventions.
+
+Technical documentation describes how the project is structured, runs, and operates. **Product documentation** (`PRD.md`, `readme.md`, `documents/`) defines what to build; **`docs/`** defines how to implement it consistently.
+
+| Layer | Paths |
+|-------|--------|
+| Product | `PRD.md`, `readme.md`, `documents/` |
+| Engineering | `docs/data-model.md`, `docs/api-spec.yml`, `docs/*-standards.md`, `docs/development_guide.md` |
+| Agent rules | `AGENTS.md` (root) |
+| Change specs | `openspec/` (must align with product docs) |
+| AI helpers | `ai-specs/` (supporting only) |
 
 ## General rules
 - ALWAYS WRITE IN ENGLISH, including comments and any explanation in the files. This applies both to creating new documentation and updating existing one, and it also applies to documentation within the code (comments, explanations of functions or fields, etc.).
@@ -20,8 +28,8 @@ Before making any commit or git push, or if you're asked to document a commit, y
 When updating documentation, I will:
 1. Review all recent changes in the codebase
 2. Identify which documentation files need updates based on the changes. Some clear examples:
-   - For data model changes: Update data model definition section in data-model.md
-   - For API changes: Update api-spec.yml
+   - For data model changes: Update `docs/data-model.md` and readme §3 if user-facing
+   - For API changes: Update `docs/api-spec.yml` and readme §4 if user-facing
    - For changes in libraries, database migrations, or anything that changes the installation process, update *-standards.md
 3. Update each affected documentation file in English, maintaining consistency with existing documentation
 4. Ensure all documentation is properly formatted and follows the established structure
