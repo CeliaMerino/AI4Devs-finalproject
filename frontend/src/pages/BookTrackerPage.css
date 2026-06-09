@@ -68,3 +68,47 @@
 .no-cover {
   color: #999;
 }
+
+.tracker-select,
+.tracker-date {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #c5d4d4;
+  border-radius: 6px;
+  max-width: 100%;
+}
+
+.status-cell {
+  min-width: 120px;
+}
+
+.star-rating {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #ccc;
+  cursor: pointer;
+  padding: 0.1rem;
+  line-height: 1;
+}
+
+.star-btn.star-filled {
+  color: #e6a817;
+}
+
+.star-btn:focus-visible {
+  outline: 2px solid #6bb1ad;
+  outline-offset: 2px;
+}
+
+.row-error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #b33;
+}

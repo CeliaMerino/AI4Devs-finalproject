@@ -7,9 +7,20 @@ import type {
   CatalogSearchResponse,
   CreateBookPayload,
   EditionCoversResponse,
+  MonthlyTbrResponse,
+  PatchReadingRecordPayload,
+  ReadingRecordPatchedResponse,
+  TbrEntry,
 } from './types';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/v1';
+
+let onUnauthorized: (() => void) | null = null;
+
+/** Clears session and redirects when the API returns 401. Wired from AuthProvider. */
+export function setOnUnauthorized(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
 
 function getToken(): string | null {
   return localStorage.getItem('access_token');
@@ -32,6 +43,9 @@ async function request<T>(
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as ApiError;
+    if (res.status === 401) {
+      onUnauthorized?.();
+    }
     throw new ApiRequestError(res.status, body);
   }
 
@@ -82,6 +96,44 @@ export async function createBook(
 
 export async function listBooks(): Promise<Book[]> {
   return request('/books');
+}
+
+export async function patchReadingRecord(
+  bookId: string,
+  body: PatchReadingRecordPayload,
+): Promise<ReadingRecordPatchedResponse> {
+  return request(`/books/${bookId}/reading-record`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getMonthlyTbr(
+  year: number,
+  month: number,
+): Promise<MonthlyTbrResponse> {
+  return request(`/tbr/${year}/${month}`);
+}
+
+export async function addTbrEntry(
+  year: number,
+  month: number,
+  bookId: string,
+): Promise<TbrEntry> {
+  return request(`/tbr/${year}/${month}/entries`, {
+    method: 'POST',
+    body: JSON.stringify({ book_id: bookId }),
+  });
+}
+
+export async function removeTbrEntry(
+  year: number,
+  month: number,
+  entryId: string,
+): Promise<void> {
+  return request(`/tbr/${year}/${month}/entries/${entryId}`, {
+    method: 'DELETE',
+  });
 }
 
 export function catalogEditionToCreatePayload(

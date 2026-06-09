@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { BookTrackerPage } from './pages/BookTrackerPage';
+import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
 import './App.css';
 
@@ -24,6 +25,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <BookTrackerPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/lists"
+        element={
+          <PrivateRoute>
+            <ListsPage />
           </PrivateRoute>
         }
       />

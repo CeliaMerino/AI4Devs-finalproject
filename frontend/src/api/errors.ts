@@ -13,8 +13,17 @@ export class ApiRequestError extends Error {
 }
 
 export function messageFromApiError(status: number, body: ApiError): string {
+  if (status === 401) {
+    return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+  }
   if (status === 409 || body.code === 'BOOK_DUPLICATE') {
     return 'Este libro ya está en tu biblioteca.';
+  }
+  if (body.code === 'FINISHED_BEFORE_STARTED') {
+    return 'La fecha de fin no puede ser anterior a la de inicio.';
+  }
+  if (body.code === 'TBR_BOOK_NOT_PENDING') {
+    return 'Only pending books can be added to TBR.';
   }
   if (typeof body.message === 'string') {
     return body.message;

@@ -24,7 +24,7 @@ alwaysApply: true
 
 ## Overview
 
-The frontend is a **Vite + React 19 + TypeScript** SPA for **Reading Analytics Platform**. Current MVP surfaces: **dev login**, **Book Tracker** (list + add book modal with catalog search and cover picker). Future areas (Home, Stats, TBR, Goals) follow the same patterns documented here.
+The frontend is a **Vite + React 19 + TypeScript** SPA for **Reading Analytics Platform**. Current MVP surfaces: **dev login**, **Book Tracker** (library list, add-book modal with catalog search and cover picker, inline reading lifecycle: status, dates, rating, completion modal on `leido`), **Lists / TBR** (`/lists` — monthly TBR with month navigation, empty state, **AddToTbrModal** with Library tab (pending books only) and Search tab (catalog → create pendiente book → add entry), completed styling). Future areas (Home, Stats, Goals) follow the same patterns documented here.
 
 ## Technology Stack
 
@@ -56,10 +56,16 @@ frontend/
 │   │   └── AuthContext.tsx
 │   ├── pages/
 │   │   ├── LoginPage.tsx
-│   │   └── BookTrackerPage.tsx
+│   │   ├── BookTrackerPage.tsx
+│   │   └── ListsPage.tsx
 │   └── components/
 │       ├── AddBookModal.tsx
-│       └── CoverPicker.tsx
+│       ├── BookTrackerRow.tsx
+│       ├── CompletionModal.tsx
+│       ├── CoverPicker.tsx
+│       ├── InlineDateField.tsx
+│       ├── ReadingStatusSelect.tsx
+│       └── StarRating.tsx
 └── package.json
 ```
 
@@ -164,7 +170,7 @@ No test runner is configured in `package.json` yet. When adding tests:
 
 - Prefer **Vitest** + **React Testing Library** for units.
 - **Playwright** for E2E (see OpenSpec / MCP recommendations in `ai-specs/specboot-instructions.md`).
-- Test critical flows: login, search catalog, pick cover, create book, duplicate error.
+- Test critical flows: login, search catalog, pick cover, create book, duplicate error, PATCH reading record (status, dates, rating), completion modal.
 
 ## Configuration
 

@@ -23,6 +23,8 @@ tags:
     description: User library
   - name: Catalog
     description: External metadata search and covers (no persistence until book create)
+  - name: TBR
+    description: Monthly To Be Read lists (UC-05)
 
 paths:
   /auth/dev-login:
@@ -98,6 +100,187 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BookDuplicateError'
+
+  /books/{bookId}/reading-record:
+    patch:
+      summary: Update reading status, dates, rating, or format
+      description: |
+        Partial update of the 1:1 `reading_records` row (UC-02, partial UC-04).
+        Returns `meta.openCompletionModal: true` when status transitions to `leido`.
+        Returns `meta.tbrAutoCompleted: true` when the book is marked completed in the active month's TBR.
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchReadingRecordRequest'
+      responses:
+        '200':
+          description: Reading record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingRecordPatchedResponse'
+        '400':
+          description: Validation error or empty body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Book not found or not owned by user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Business rule violation (e.g. finish before start)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnprocessableErrorResponse'
+
+  /tbr/{year}/{month}:
+    get:
+      summary: Get or create monthly TBR
+      description: Returns the user's TBR for the given calendar month, creating an empty list if none exists.
+      tags: [TBR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Monthly TBR with entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyTbrResponse'
+        '400':
+          description: Invalid year or month
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tbr/{year}/{month}/entries:
+    post:
+      summary: Add book to monthly TBR
+      tags: [TBR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTbrEntryRequest'
+      responses:
+        '201':
+          description: Entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TbrEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Book not found or not owned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Book already in list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Book reading status is not pendiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnprocessableErrorResponse'
+              example:
+                statusCode: 422
+                message: Only pending books can be added to TBR
+                code: TBR_BOOK_NOT_PENDING
+
+  /tbr/{year}/{month}/entries/{entryId}:
+    delete:
+      summary: Remove book from monthly TBR
+      tags: [TBR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Entry removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /books/catalog/search:
     get:
@@ -233,6 +416,110 @@ components:
       type: string
       enum: [pendiente, leyendo, leido, dnf]
 
+    ReadFormat:
+      type: string
+      enum: [fisico, ebook, audio]
+
+    PatchReadingRecordRequest:
+      type: object
+      minProperties: 1
+      properties:
+        status:
+          $ref: '#/components/schemas/ReadingStatus'
+        started_on:
+          type: string
+          format: date
+        finished_on:
+          type: string
+          format: date
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        read_format:
+          $ref: '#/components/schemas/ReadFormat'
+
+    ReadingRecordResource:
+      type: object
+      required: [book_id, status, updated_at]
+      properties:
+        book_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ReadingStatus'
+        current_page:
+          type: integer
+          nullable: true
+        progress_percent:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        read_format:
+          oneOf:
+            - $ref: '#/components/schemas/ReadFormat'
+            - type: 'null'
+        started_on:
+          type: string
+          format: date
+          nullable: true
+        finished_on:
+          type: string
+          format: date
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+
+    PatchSideEffectsMeta:
+      type: object
+      properties:
+        openCompletionModal:
+          type: boolean
+        tbrAutoCompleted:
+          type: boolean
+          description: true when an open entry in the active month's TBR was marked completed
+
+    ReadingRecordPatchedResponse:
+      type: object
+      required: [reading, book]
+      properties:
+        reading:
+          $ref: '#/components/schemas/ReadingRecordResource'
+        book:
+          type: object
+          required: [id, page_count]
+          properties:
+            id:
+              type: string
+              format: uuid
+            page_count:
+              type: integer
+              nullable: true
+        meta:
+          $ref: '#/components/schemas/PatchSideEffectsMeta'
+
+    UnprocessableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            code:
+              type: string
+              example: FINISHED_BEFORE_STARTED
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+
     Book:
       type: object
       required:
@@ -299,6 +586,23 @@ components:
           properties:
             reading_status:
               $ref: '#/components/schemas/ReadingStatus'
+            started_on:
+              type: string
+              format: date
+              nullable: true
+            finished_on:
+              type: string
+              format: date
+              nullable: true
+            rating:
+              type: integer
+              nullable: true
+              minimum: 1
+              maximum: 5
+            read_format:
+              oneOf:
+                - $ref: '#/components/schemas/ReadFormat'
+                - type: 'null'
 
     CreateBookRequest:
       type: object
@@ -445,6 +749,88 @@ components:
       example:
         statusCode: 400
         message: ['q must be longer than or equal to 2 characters']
+
+    MonthlyTbrList:
+      type: object
+      required: [id, year, month, auto_created, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        auto_created:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TbrBookSummary:
+      type: object
+      required: [id, title, authors, reading_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        authors:
+          type: string
+        cover_image_url:
+          type: string
+          nullable: true
+        reading_status:
+          $ref: '#/components/schemas/ReadingStatus'
+
+    TbrEntry:
+      type: object
+      required: [id, book_id, sort_order, completed, added_at, book]
+      properties:
+        id:
+          type: string
+          format: uuid
+        book_id:
+          type: string
+          format: uuid
+        sort_order:
+          type: integer
+        completed:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        added_at:
+          type: string
+          format: date-time
+        book:
+          $ref: '#/components/schemas/TbrBookSummary'
+
+    MonthlyTbrResponse:
+      type: object
+      required: [list, entries]
+      properties:
+        list:
+          $ref: '#/components/schemas/MonthlyTbrList'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/TbrEntry'
+
+    AddTbrEntryRequest:
+      type: object
+      required: [book_id]
+      properties:
+        book_id:
+          type: string
+          format: uuid
 
     BookDuplicateError:
       type: object

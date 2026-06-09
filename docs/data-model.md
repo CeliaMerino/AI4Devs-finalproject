@@ -9,8 +9,10 @@ Data model for **Reading Analytics Platform**: personal reading library, progres
 | **User** | `users` | Account identified by email (MVP: dev-login, optional password later) |
 | **Book** | `books` | User-owned bibliographic record with catalog/manual provenance |
 | **ReadingRecord** | `reading_records` | 1:1 reading state and progress for a book |
+| **MonthlyTbrList** | `monthly_tbr_lists` | One TBR list per user per calendar month |
+| **TbrEntry** | `tbr_entries` | Book on a monthly TBR with sort order and completion |
 
-All user-owned books are scoped by `user_id`. Deleting a user cascades to books and reading records.
+All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, and TBR lists.
 
 ## Entity definitions
 
@@ -81,6 +83,39 @@ Reading status and progress for a single book (1:1 with book).
 
 **Default on book create:** new books get `reading_records.status = 'pendiente'`.
 
+### MonthlyTbrList
+
+Monthly To Be Read list (UC-05). At most one list per user per `(year, month)`.
+
+| Field | Column | Type | Constraints |
+|-------|--------|------|-------------|
+| id | `id` | UUID | PK |
+| userId | `user_id` | UUID | FK → `users.id`, ON DELETE CASCADE |
+| year | `year` | SMALLINT | NOT NULL |
+| month | `month` | SMALLINT | NOT NULL, 1–12 |
+| listStatus | `list_status` | VARCHAR(20) | NOT NULL, default `active` |
+| autoCreated | `auto_created` | BOOLEAN | NOT NULL, default `false` |
+| createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
+| updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
+
+**Uniqueness:** `UNIQUE (user_id, year, month)`.
+
+### TbrEntry
+
+A book on a monthly TBR checklist.
+
+| Field | Column | Type | Constraints |
+|-------|--------|------|-------------|
+| id | `id` | UUID | PK |
+| monthlyTbrId | `monthly_tbr_id` | UUID | FK → `monthly_tbr_lists.id`, ON DELETE CASCADE |
+| bookId | `book_id` | UUID | FK → `books.id`, ON DELETE CASCADE |
+| sortOrder | `sort_order` | INTEGER | NOT NULL |
+| completed | `completed` | BOOLEAN | NOT NULL, default `false` |
+| completedAt | `completed_at` | VARCHAR(30) | NULL; ISO 8601 timestamp when completed |
+| addedAt | `added_at` | TIMESTAMPTZ | NOT NULL |
+
+**Uniqueness:** `UNIQUE (monthly_tbr_id, book_id)`.
+
 ## Entity-relationship diagram
 
 ```mermaid
@@ -144,7 +179,7 @@ Run: `npm run migration:run` from `backend/`.
 
 ## Planned extensions (not in schema yet)
 
-Document in OpenSpec before adding tables: TBR lists, annual goals, tags, import batches, stats aggregates. Keep `docs/data-model.md` and `docs/api-spec.yml` in sync when implementing.
+Document in OpenSpec before adding tables: annual goals, tags, import batches, stats aggregates. Keep `docs/data-model.md` and `docs/api-spec.yml` in sync when implementing.
 
 ## Related documentation
 

@@ -1,0 +1,132 @@
+.lists-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.lists-header {
+  margin-bottom: 1.5rem;
+}
+
+.lists-header h1 {
+  margin: 0.5rem 0 1rem;
+  font-size: 1.5rem;
+}
+
+.lists-nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.lists-nav__current {
+  font-weight: 600;
+}
+
+.lists-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lists-month-nav button {
+  padding: 0.25rem 0.75rem;
+}
+
+.lists-error {
+  color: #b00020;
+}
+
+.tbr-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.tbr-empty-state p {
+  margin-bottom: 1rem;
+}
+
+.tbr-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tbr-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.tbr-entry--completed .tbr-entry__title,
+.tbr-entry--completed .tbr-entry__authors {
+  text-decoration: line-through;
+  color: #666;
+}
+
+.tbr-entry__check {
+  font-size: 1.1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.tbr-entry__cover {
+  width: 40px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tbr-entry__cover--placeholder {
+  background: #ddd;
+}
+
+.tbr-entry__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tbr-entry__title {
+  font-weight: 600;
+}
+
+.tbr-entry__authors {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.tbr-entry__remove {
+  font-size: 0.8rem;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-primary {
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
