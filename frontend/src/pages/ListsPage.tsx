@@ -70,6 +70,7 @@ export function ListsPage() {
     <div className="lists-page">
       <header className="lists-header">
         <nav className="lists-nav">
+          <Link to="/">Home</Link>
           <Link to="/book-tracker">Book Tracker</Link>
           <span className="lists-nav__current">Lists</span>
         </nav>

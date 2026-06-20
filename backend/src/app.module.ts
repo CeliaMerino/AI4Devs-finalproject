@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { BooksModule } from './books/books.module';
 import { Book } from './books/entities/book.entity';
 import { ReadingRecord } from './books/entities/reading-record.entity';
+import { GoalsModule } from './goals/goals.module';
+import { AnnualReadingGoal } from './goals/entities/annual-reading-goal.entity';
 import { ListsModule } from './lists/lists.module';
 import { MonthlyTbrList } from './lists/entities/monthly-tbr-list.entity';
 import { TbrEntry } from './lists/entities/tbr-entry.entity';
@@ -22,7 +24,7 @@ import { UsersModule } from './users/users.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
-        entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry],
+        entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, AnnualReadingGoal],
         migrations: [`${__dirname}/migrations/*{.ts,.js}`],
         migrationsRun: config.get('TYPEORM_MIGRATIONS_RUN') === 'true',
         synchronize: config.get('TYPEORM_SYNCHRONIZE') === 'true',
@@ -32,6 +34,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     BooksModule,
     ListsModule,
+    GoalsModule,
   ],
 })
 export class AppModule {}

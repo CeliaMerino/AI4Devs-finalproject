@@ -1,0 +1,41 @@
+.home-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.home-header {
+  margin-bottom: 2rem;
+}
+
+.home-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.home-nav a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.home-nav a:hover {
+  text-decoration: underline;
+}
+
+.home-nav__current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.home-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.home-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}

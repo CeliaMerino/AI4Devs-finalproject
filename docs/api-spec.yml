@@ -25,6 +25,8 @@ tags:
     description: External metadata search and covers (no persistence until book create)
   - name: TBR
     description: Monthly To Be Read lists (UC-05)
+  - name: Goals
+    description: Annual reading goals and progress (UC-06)
 
 paths:
   /auth/dev-login:
@@ -281,6 +283,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /goals/{year}:
+    get:
+      summary: Get annual goal with progress and forecast
+      description: Returns the user's annual reading goal for the given year, books read count, progress percentage, and optional pace forecast. Always 200; `goal` is null when unset.
+      tags: [Goals]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+      responses:
+        '200':
+          description: Annual goal snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualGoalResponse'
+        '400':
+          description: Invalid year
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      summary: Create or update annual goal
+      tags: [Goals]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertGoalRequest'
+      responses:
+        '200':
+          description: Goal saved with updated progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualGoalResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /books/catalog/search:
     get:
@@ -831,6 +899,74 @@ components:
         book_id:
           type: string
           format: uuid
+
+    UpsertGoalRequest:
+      type: object
+      required: [target_book_count]
+      properties:
+        target_book_count:
+          type: integer
+          minimum: 1
+          maximum: 365
+          example: 50
+
+    GoalForecast:
+      type: object
+      required:
+        - projected_year_end_count
+        - on_track
+        - pace_books_per_week
+        - required_books_per_week
+        - status
+      properties:
+        projected_year_end_count:
+          type: integer
+        on_track:
+          type: boolean
+        pace_books_per_week:
+          type: number
+        required_books_per_week:
+          type: number
+        status:
+          type: string
+          enum: [ahead, on_track, behind]
+
+    AnnualGoalResource:
+      type: object
+      required: [id, target_book_count, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        target_book_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AnnualGoalResponse:
+      type: object
+      required: [year, goal, books_read, progress_percent, forecast]
+      properties:
+        year:
+          type: integer
+        goal:
+          oneOf:
+            - $ref: '#/components/schemas/AnnualGoalResource'
+            - type: 'null'
+        books_read:
+          type: integer
+        progress_percent:
+          oneOf:
+            - type: integer
+            - type: 'null'
+        forecast:
+          oneOf:
+            - $ref: '#/components/schemas/GoalForecast'
+            - type: 'null'
 
     BookDuplicateError:
       type: object

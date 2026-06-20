@@ -26,12 +26,19 @@ export function BookTrackerPage() {
   const invalidateBooks = (
     tbrAutoCompleted?: boolean,
     finishedOn?: string | null,
+    transitionedToLeido?: boolean,
   ) => {
     queryClient.invalidateQueries({ queryKey: ['books'] });
     if (tbrAutoCompleted) {
       const ref = finishedOn ? new Date(`${finishedOn}T00:00:00Z`) : new Date();
       queryClient.invalidateQueries({
         queryKey: ['tbr', ref.getUTCFullYear(), ref.getUTCMonth() + 1],
+      });
+    }
+    if (transitionedToLeido) {
+      const ref = finishedOn ? new Date(`${finishedOn}T00:00:00Z`) : new Date();
+      queryClient.invalidateQueries({
+        queryKey: ['goals', ref.getUTCFullYear()],
       });
     }
   };
@@ -72,6 +79,7 @@ export function BookTrackerPage() {
     <div className="book-tracker">
       <header className="tracker-header">
         <nav className="tracker-nav">
+          <Link to="/">Home</Link>
           <span className="tracker-nav__current">Book Tracker</span>
           <Link to="/lists">Lists</Link>
         </nav>

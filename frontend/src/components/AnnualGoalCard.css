@@ -1,0 +1,114 @@
+.annual-goal-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  max-width: 28rem;
+}
+
+.annual-goal-card--error {
+  border-color: #fecaca;
+}
+
+.annual-goal-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.annual-goal-card__header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.annual-goal-form label {
+  display: block;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.annual-goal-form__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.annual-goal-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.annual-goal-form button[type='submit'] {
+  padding: 0.5rem 1rem;
+  background: #4f46e5;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.annual-goal-form button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.annual-goal-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.annual-goal-progress {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.annual-goal-progress__count {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.annual-goal-progress__percent {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.annual-goal-bar {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.annual-goal-bar__fill {
+  background: #4f46e5;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.annual-goal-forecast {
+  font-size: 0.875rem;
+  margin: 0;
+  color: #334155;
+}
+
+.annual-goal-forecast--muted {
+  color: #94a3b8;
+}

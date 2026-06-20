@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
+import { HomePage } from './pages/HomePage';
 import { BookTrackerPage } from './pages/BookTrackerPage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
@@ -21,6 +22,14 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <HomePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/book-tracker"
         element={
           <PrivateRoute>
@@ -36,7 +45,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/book-tracker" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

@@ -123,6 +123,31 @@ export interface MonthlyTbrResponse {
   entries: TbrEntry[];
 }
 
+export type GoalForecastStatus = 'ahead' | 'on_track' | 'behind';
+
+export interface GoalForecast {
+  projected_year_end_count: number;
+  on_track: boolean;
+  pace_books_per_week: number;
+  required_books_per_week: number;
+  status: GoalForecastStatus;
+}
+
+export interface AnnualGoalResource {
+  id: string;
+  target_book_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnnualGoalResponse {
+  year: number;
+  goal: AnnualGoalResource | null;
+  books_read: number;
+  progress_percent: number | null;
+  forecast: GoalForecast | null;
+}
+
 export interface CreateBookPayload {
   title: string;
   authors: string;

@@ -20,6 +20,7 @@ interface BookTrackerRowProps {
   onUpdated: (
     tbrAutoCompleted?: boolean,
     finishedOn?: string | null,
+    transitionedToLeido?: boolean,
   ) => void;
 }
 
@@ -44,7 +45,13 @@ export function BookTrackerRow({
       if (data.meta?.openCompletionModal) {
         onOpenCompletionModal(book.id, data.reading);
       }
-      onUpdated(data.meta?.tbrAutoCompleted, data.reading.finished_on);
+      const transitionedToLeido =
+        status !== 'leido' && data.reading.status === 'leido';
+      onUpdated(
+        data.meta?.tbrAutoCompleted,
+        data.reading.finished_on,
+        transitionedToLeido,
+      );
     },
     onError: (err) => {
       setFieldError(messageFromUnknownError(err));
