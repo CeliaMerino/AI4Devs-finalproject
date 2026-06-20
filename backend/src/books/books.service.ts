@@ -1,7 +1,11 @@
 import {
+  BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,8 +15,15 @@ import {
   BookListItemDto,
 } from './dto/book-response.dto';
 import { CreateBookDto } from './dto/create-book.dto';
+import { PatchReadingRecordDto } from './dto/patch-reading-record.dto';
+import {
+  PatchSideEffectsMetaDto,
+  ReadingRecordPatchedResponseDto,
+  ReadingRecordResourceDto,
+} from './dto/reading-record-response.dto';
 import { GoogleBooksClient } from './catalog/google-books.client';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
+import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
 
@@ -25,6 +36,8 @@ export class BooksService {
     private readonly readingRepo: Repository<ReadingRecord>,
     private readonly openLibraryEnrichment: OpenLibraryEnrichmentService,
     private readonly googleBooksClient: GoogleBooksClient,
+    @Inject(forwardRef(() => TbrService))
+    private readonly tbrService: TbrService,
   ) {}
 
   async listForUser(userId: string): Promise<BookListItemDto[]> {
@@ -36,7 +49,139 @@ export class BooksService {
     return books.map((b) => ({
       ...this.toBookDto(b),
       reading_status: b.readingRecord?.status ?? 'pendiente',
+      started_on: b.readingRecord?.startedOn ?? null,
+      finished_on: b.readingRecord?.finishedOn ?? null,
+      rating: b.readingRecord?.rating ?? null,
+      read_format: b.readingRecord?.readFormat ?? null,
     }));
+  }
+
+  async patchReadingRecord(
+    userId: string,
+    bookId: string,
+    dto: PatchReadingRecordDto,
+  ): Promise<ReadingRecordPatchedResponseDto> {
+    this.assertPatchHasFields(dto);
+
+    const book = await this.booksRepo.findOne({
+      where: { id: bookId, userId },
+      relations: ['readingRecord'],
+    });
+    if (!book?.readingRecord) {
+      throw new NotFoundException('Book not found');
+    }
+
+    const reading = book.readingRecord;
+    const previousStatus = reading.status;
+
+    if (dto.status !== undefined) {
+      reading.status = dto.status;
+    }
+    if (dto.started_on !== undefined) {
+      reading.startedOn = dto.started_on;
+    }
+    if (dto.finished_on !== undefined) {
+      reading.finishedOn = dto.finished_on;
+    }
+    if (dto.rating !== undefined) {
+      reading.rating = dto.rating;
+    }
+    if (dto.read_format !== undefined) {
+      reading.readFormat = dto.read_format;
+    }
+
+    const today = this.utcToday();
+
+    if (
+      reading.status === 'leyendo' &&
+      previousStatus !== 'leyendo' &&
+      dto.started_on === undefined
+    ) {
+      reading.startedOn = today;
+    }
+
+    if (
+      reading.status === 'leido' &&
+      previousStatus !== 'leido' &&
+      dto.finished_on === undefined
+    ) {
+      reading.finishedOn = today;
+    }
+
+    if (reading.status === 'leido' && previousStatus !== 'leido') {
+      if (book.pageCount != null) {
+        reading.currentPage = book.pageCount;
+        reading.progressPercent = '100.00';
+      }
+    }
+
+    if (
+      reading.startedOn &&
+      reading.finishedOn &&
+      reading.finishedOn < reading.startedOn
+    ) {
+      throw new UnprocessableEntityException({
+        statusCode: 422,
+        message: 'Finish date cannot be before start date',
+        code: 'FINISHED_BEFORE_STARTED',
+      });
+    }
+
+    await this.readingRepo.save(reading);
+
+    const meta: PatchSideEffectsMetaDto = {};
+    if (reading.status === 'leido' && previousStatus !== 'leido') {
+      meta.openCompletionModal = true;
+      const tbrCompleted =
+        await this.tbrService.markCompletedIfInActiveMonthTbr(
+          userId,
+          bookId,
+          reading.finishedOn,
+        );
+      if (tbrCompleted) {
+        meta.tbrAutoCompleted = true;
+      }
+    }
+
+    const hasMeta = meta.openCompletionModal || meta.tbrAutoCompleted;
+
+    return {
+      reading: this.toReadingRecordResource(reading),
+      book: { id: book.id, page_count: book.pageCount },
+      ...(hasMeta ? { meta } : {}),
+    };
+  }
+
+  private assertPatchHasFields(dto: PatchReadingRecordDto): void {
+    const hasField =
+      dto.status !== undefined ||
+      dto.started_on !== undefined ||
+      dto.finished_on !== undefined ||
+      dto.rating !== undefined ||
+      dto.read_format !== undefined;
+    if (!hasField) {
+      throw new BadRequestException('At least one field must be provided');
+    }
+  }
+
+  private utcToday(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private toReadingRecordResource(
+    reading: ReadingRecord,
+  ): ReadingRecordResourceDto {
+    return {
+      book_id: reading.bookId,
+      status: reading.status,
+      current_page: reading.currentPage,
+      progress_percent: reading.progressPercent,
+      rating: reading.rating,
+      read_format: reading.readFormat,
+      started_on: reading.startedOn,
+      finished_on: reading.finishedOn,
+      updated_at: reading.updatedAt.toISOString(),
+    };
   }
 
   async create(userId: string, dto: CreateBookDto): Promise<BookCreatedResponseDto> {

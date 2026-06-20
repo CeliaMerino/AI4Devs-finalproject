@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -13,6 +15,7 @@ import { EditionCoversService } from './catalog/edition-covers.service';
 import { CatalogSearchQueryDto } from './dto/catalog-search-query.dto';
 import { EditionCoversQueryDto } from './dto/edition-covers.dto';
 import { CreateBookDto } from './dto/create-book.dto';
+import { PatchReadingRecordDto } from './dto/patch-reading-record.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { RequestWithUser } from '../auth/request-with-user';
 
@@ -48,5 +51,18 @@ export class BooksController {
   @Post()
   create(@Req() req: RequestWithUser, @Body() dto: CreateBookDto) {
     return this.booksService.create(req.user.userId, dto);
+  }
+
+  @Patch(':bookId/reading-record')
+  patchReadingRecord(
+    @Req() req: RequestWithUser,
+    @Param('bookId') bookId: string,
+    @Body() dto: PatchReadingRecordDto,
+  ) {
+    return this.booksService.patchReadingRecord(
+      req.user.userId,
+      bookId,
+      dto,
+    );
   }
 }

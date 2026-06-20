@@ -4,6 +4,10 @@ export type DataSource =
   | 'goodreads'
   | 'manual';
 
+export type ReadingStatus = 'pendiente' | 'leyendo' | 'leido' | 'dnf';
+
+export type ReadFormat = 'fisico' | 'ebook' | 'audio';
+
 export interface CatalogEdition {
   title: string;
   authors: string;
@@ -49,7 +53,74 @@ export interface Book {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  reading_status?: string;
+  reading_status?: ReadingStatus;
+  started_on?: string | null;
+  finished_on?: string | null;
+  rating?: number | null;
+  read_format?: ReadFormat | null;
+}
+
+export interface PatchReadingRecordPayload {
+  status?: ReadingStatus;
+  started_on?: string;
+  finished_on?: string;
+  rating?: number;
+  read_format?: ReadFormat;
+}
+
+export interface ReadingRecordResource {
+  book_id: string;
+  status: ReadingStatus;
+  current_page: number | null;
+  progress_percent: string | null;
+  rating: number | null;
+  read_format: ReadFormat | null;
+  started_on: string | null;
+  finished_on: string | null;
+  updated_at: string;
+}
+
+export interface PatchSideEffectsMeta {
+  openCompletionModal?: boolean;
+  tbrAutoCompleted?: boolean;
+}
+
+export interface ReadingRecordPatchedResponse {
+  reading: ReadingRecordResource;
+  book: { id: string; page_count: number | null };
+  meta?: PatchSideEffectsMeta;
+}
+
+export interface MonthlyTbrList {
+  id: string;
+  year: number;
+  month: number;
+  auto_created: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TbrBookSummary {
+  id: string;
+  title: string;
+  authors: string;
+  cover_image_url: string | null;
+  reading_status: ReadingStatus;
+}
+
+export interface TbrEntry {
+  id: string;
+  book_id: string;
+  sort_order: number;
+  completed: boolean;
+  completed_at: string | null;
+  added_at: string;
+  book: TbrBookSummary;
+}
+
+export interface MonthlyTbrResponse {
+  list: MonthlyTbrList;
+  entries: TbrEntry[];
 }
 
 export interface CreateBookPayload {

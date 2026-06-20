@@ -1,11 +1,21 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { listBooks } from '../api/client';
+import { Link } from 'react-router-dom';
+import { listBooks, patchReadingRecord } from '../api/client';
+import { messageFromUnknownError } from '../api/errors';
+import type { ReadingRecordResource } from '../api/types';
 import { AddBookModal } from '../components/AddBookModal';
+import { BookTrackerRow } from '../components/BookTrackerRow';
+import { CompletionModal } from '../components/CompletionModal';
 import './BookTrackerPage.css';
 
 export function BookTrackerPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [completionBookId, setCompletionBookId] = useState<string | null>(
+    null,
+  );
+  const [completionReading, setCompletionReading] =
+    useState<ReadingRecordResource | null>(null);
   const queryClient = useQueryClient();
 
   const { data: books = [], isLoading, error } = useQuery({
@@ -13,9 +23,55 @@ export function BookTrackerPage() {
     queryFn: listBooks,
   });
 
+  const invalidateBooks = (tbrAutoCompleted?: boolean) => {
+    queryClient.invalidateQueries({ queryKey: ['books'] });
+    if (tbrAutoCompleted) {
+      const now = new Date();
+      queryClient.invalidateQueries({
+        queryKey: ['tbr', now.getUTCFullYear(), now.getUTCMonth() + 1],
+      });
+    }
+  };
+
+  const completionMutation = useMutation({
+    mutationFn: (payload: {
+      finished_on: string;
+      read_format?: string;
+      rating?: number;
+    }) =>
+      patchReadingRecord(completionBookId!, payload as Parameters<
+        typeof patchReadingRecord
+      >[1]),
+    onSuccess: () => {
+      setCompletionBookId(null);
+      setCompletionReading(null);
+      invalidateBooks();
+    },
+  });
+
+  const handleOpenCompletion = (
+    bookId: string,
+    reading: ReadingRecordResource,
+  ) => {
+    setCompletionBookId(bookId);
+    setCompletionReading(reading);
+  };
+
+  const handleCompletionSave = (payload: {
+    finished_on: string;
+    read_format?: string;
+    rating?: number;
+  }) => {
+    completionMutation.mutate(payload);
+  };
+
   return (
     <div className="book-tracker">
       <header className="tracker-header">
+        <nav className="tracker-nav">
+          <span className="tracker-nav__current">Book Tracker</span>
+          <Link to="/lists">Lists</Link>
+        </nav>
         <h1>Book Tracker</h1>
         <button
           type="button"
@@ -28,6 +84,11 @@ export function BookTrackerPage() {
 
       {isLoading && <p>Cargando biblioteca…</p>}
       {error && <p className="tracker-error">No se pudo cargar la biblioteca.</p>}
+      {completionMutation.isError && (
+        <p className="tracker-error" role="alert">
+          {messageFromUnknownError(completionMutation.error)}
+        </p>
+      )}
 
       {!isLoading && books.length === 0 && (
         <p className="tracker-empty">Aún no tienes libros. Pulsa «Añadir libro» para empezar.</p>
@@ -42,28 +103,19 @@ export function BookTrackerPage() {
             <th>Género</th>
             <th>Páginas</th>
             <th>Estado</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Puntuación</th>
           </tr>
         </thead>
         <tbody>
           {books.map((book) => (
-            <tr key={book.id}>
-              <td>
-                {book.cover_image_url ? (
-                  <img
-                    src={book.cover_image_url}
-                    alt=""
-                    className="table-cover"
-                  />
-                ) : (
-                  <span className="no-cover">—</span>
-                )}
-              </td>
-              <td>{book.title}</td>
-              <td>{book.authors}</td>
-              <td>{book.genre ?? '—'}</td>
-              <td>{book.page_count ?? '—'}</td>
-              <td>{book.reading_status ?? 'pendiente'}</td>
-            </tr>
+            <BookTrackerRow
+              key={book.id}
+              book={book}
+              onOpenCompletionModal={handleOpenCompletion}
+              onUpdated={invalidateBooks}
+            />
           ))}
         </tbody>
       </table>
@@ -71,7 +123,18 @@ export function BookTrackerPage() {
       <AddBookModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
+        onSaved={invalidateBooks}
+      />
+
+      <CompletionModal
+        open={completionBookId !== null}
+        reading={completionReading}
+        saving={completionMutation.isPending}
+        onClose={() => {
+          setCompletionBookId(null);
+          setCompletionReading(null);
+        }}
+        onSave={handleCompletionSave}
       />
     </div>
   );

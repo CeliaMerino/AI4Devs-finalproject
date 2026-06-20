@@ -2,11 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { devLogin } from '../api/client';
+import { devLogin, setOnUnauthorized } from '../api/client';
 
 interface AuthState {
   token: string | null;
@@ -40,6 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setEmail(null);
   }, []);
+
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      logout();
+      window.location.assign('/login');
+    });
+    return () => setOnUnauthorized(null);
+  }, [logout]);
 
   const value = useMemo(
     () => ({

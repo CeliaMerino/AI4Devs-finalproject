@@ -32,4 +32,8 @@ export class BookCreatedResponseDto {
 
 export class BookListItemDto extends BookDto {
   reading_status: ReadingStatus;
+  started_on: string | null;
+  finished_on: string | null;
+  rating: number | null;
+  read_format: string | null;
 }
