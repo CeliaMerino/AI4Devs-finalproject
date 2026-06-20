@@ -7,6 +7,10 @@ import type { ReadingRecordResource } from '../api/types';
 import { AddBookModal } from '../components/AddBookModal';
 import { BookTrackerRow } from '../components/BookTrackerRow';
 import { CompletionModal } from '../components/CompletionModal';
+import {
+  invalidateGoalsForReadingUpdate,
+  type ReadingRecordUpdateContext,
+} from '../lib/goalsCacheInvalidation';
 import './BookTrackerPage.css';
 
 export function BookTrackerPage() {
@@ -23,24 +27,19 @@ export function BookTrackerPage() {
     queryFn: listBooks,
   });
 
-  const invalidateBooks = (
-    tbrAutoCompleted?: boolean,
-    finishedOn?: string | null,
-    transitionedToLeido?: boolean,
+  const invalidateAfterReadingUpdate = (
+    ctx: ReadingRecordUpdateContext & { tbrAutoCompleted?: boolean },
   ) => {
     queryClient.invalidateQueries({ queryKey: ['books'] });
-    if (tbrAutoCompleted) {
-      const ref = finishedOn ? new Date(`${finishedOn}T00:00:00Z`) : new Date();
+    if (ctx.tbrAutoCompleted) {
+      const ref = ctx.finishedOn
+        ? new Date(`${ctx.finishedOn}T00:00:00Z`)
+        : new Date();
       queryClient.invalidateQueries({
         queryKey: ['tbr', ref.getUTCFullYear(), ref.getUTCMonth() + 1],
       });
     }
-    if (transitionedToLeido) {
-      const ref = finishedOn ? new Date(`${finishedOn}T00:00:00Z`) : new Date();
-      queryClient.invalidateQueries({
-        queryKey: ['goals', ref.getUTCFullYear()],
-      });
-    }
+    invalidateGoalsForReadingUpdate(queryClient, ctx);
   };
 
   const completionMutation = useMutation({
@@ -52,10 +51,19 @@ export function BookTrackerPage() {
       patchReadingRecord(completionBookId!, payload as Parameters<
         typeof patchReadingRecord
       >[1]),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (completionReading) {
+        invalidateAfterReadingUpdate({
+          previousStatus: completionReading.status,
+          newStatus: data.reading.status,
+          previousFinishedOn: completionReading.finished_on,
+          finishedOn: data.reading.finished_on,
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['books'] });
+      }
       setCompletionBookId(null);
       setCompletionReading(null);
-      invalidateBooks();
     },
   });
 
@@ -125,7 +133,7 @@ export function BookTrackerPage() {
               key={book.id}
               book={book}
               onOpenCompletionModal={handleOpenCompletion}
-              onUpdated={invalidateBooks}
+              onUpdated={invalidateAfterReadingUpdate}
             />
           ))}
         </tbody>
@@ -134,7 +142,7 @@ export function BookTrackerPage() {
       <AddBookModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSaved={invalidateBooks}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
       />
 
       <CompletionModal

@@ -178,7 +178,7 @@ Como **lectora orientada a datos**, quiero **poder cambiar el estado de mis libr
 
 Esta historia cubre el ciclo de vida de un libro **una vez está en la biblioteca**. Es la base de las estadísticas (UC-07), el progreso del TBR (UC-05) y la meta anual (UC-06), ya que los KPIs se calculan a partir del estado `leido` y la fecha `finished_on`.
 
-**Alcance de esta historia:** escenarios 1–7 únicamente. Los efectos sobre TBR y Goals se implementan en historias dependientes (escenario 8 → KAN-10; escenario 9 → KAN-11). El progreso por página (UC-03) y las etiquetas del modal UC-04 quedan fuera de alcance.
+**Alcance de esta historia:** escenarios 1–7 únicamente. Los efectos sobre TBR y Goals se implementan en historias dependientes (escenario 8 → KAN-13; escenario 9 → KAN-14). El progreso por página (UC-03) y las etiquetas del modal UC-04 quedan fuera de alcance.
 
 ### Estados disponibles
 
@@ -238,7 +238,7 @@ Esta historia cubre el ciclo de vida de un libro **una vez está en la bibliotec
 | Escenario | Dependencia |
 | --- | --- |
 | 8 · Efecto en TBR al marcar `leido` | [KAN-13](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-13) (`TBRService`, tablas `monthly_tbr_lists` / `tbr_entries`; infra KAN-10) |
-| 9 · Efecto en meta anual | [KAN-11](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-11) (`GoalService`, tabla `annual_reading_goals`; invalidación caché Home al marcar `leido`) |
+| 9 · Efecto en meta anual | [KAN-14](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-14) (subtarea KAN-11: `GoalsService`, tabla `annual_reading_goals`; invalidación caché Home al marcar `leido`) |
 
 ### Notas técnicas
 

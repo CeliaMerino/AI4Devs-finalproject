@@ -7,6 +7,7 @@ import type {
   ReadingRecordPatchedResponse,
   ReadingRecordResource,
 } from '../api/types';
+import type { ReadingRecordUpdateContext } from '../lib/goalsCacheInvalidation';
 import { InlineDateField } from './InlineDateField';
 import { ReadingStatusSelect } from './ReadingStatusSelect';
 import { StarRating } from './StarRating';
@@ -18,9 +19,7 @@ interface BookTrackerRowProps {
     reading: ReadingRecordResource,
   ) => void;
   onUpdated: (
-    tbrAutoCompleted?: boolean,
-    finishedOn?: string | null,
-    transitionedToLeido?: boolean,
+    ctx: ReadingRecordUpdateContext & { tbrAutoCompleted?: boolean },
   ) => void;
 }
 
@@ -45,13 +44,13 @@ export function BookTrackerRow({
       if (data.meta?.openCompletionModal) {
         onOpenCompletionModal(book.id, data.reading);
       }
-      const transitionedToLeido =
-        status !== 'leido' && data.reading.status === 'leido';
-      onUpdated(
-        data.meta?.tbrAutoCompleted,
-        data.reading.finished_on,
-        transitionedToLeido,
-      );
+      onUpdated({
+        tbrAutoCompleted: data.meta?.tbrAutoCompleted,
+        previousStatus: status,
+        newStatus: data.reading.status,
+        previousFinishedOn: book.finished_on,
+        finishedOn: data.reading.finished_on,
+      });
     },
     onError: (err) => {
       setFieldError(messageFromUnknownError(err));

@@ -122,7 +122,11 @@ describe('Goals API (integration)', () => {
     await request(app.getHttpServer())
       .patch(`/v1/books/${bookId}/reading-record`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'leido', finished_on: `${year}-03-15` })
+      .send({
+        status: 'leido',
+        started_on: `${year}-03-01`,
+        finished_on: `${year}-03-15`,
+      })
       .expect(200);
 
     const res = await request(app.getHttpServer())
@@ -148,6 +152,91 @@ describe('Goals API (integration)', () => {
       required_books_per_week: expect.any(Number),
       status: expect.stringMatching(/^(ahead|on_track|behind)$/),
     });
+  });
+
+  it('decrements books_read when status reverts from leido', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        status: 'leyendo',
+        started_on: `${year}-03-01`,
+      })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/goals/${year}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.books_read).toBe(0);
+    expect(res.body.progress_percent).toBe(0);
+  });
+
+  it('moves count when finished_on changes across UTC years', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        status: 'leido',
+        started_on: `${year}-06-01`,
+        finished_on: `${year}-06-15`,
+      })
+      .expect(200);
+
+    const beforeMove = await request(app.getHttpServer())
+      .get(`/v1/goals/${year}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(beforeMove.body.books_read).toBe(1);
+
+    const priorYear = year - 1;
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        finished_on: `${priorYear}-12-31`,
+        started_on: `${priorYear}-12-01`,
+      })
+      .expect(200);
+
+    const currentYearRes = await request(app.getHttpServer())
+      .get(`/v1/goals/${year}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(currentYearRes.body.books_read).toBe(0);
+
+    const priorYearRes = await request(app.getHttpServer())
+      .get(`/v1/goals/${priorYear}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(priorYearRes.body.books_read).toBe(1);
+  });
+
+  it('does not increment goal year when leido finished_on is outside that year', async () => {
+    const otherBook = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Dune',
+        authors: 'Frank Herbert',
+        data_source: 'manual',
+      })
+      .expect(201);
+
+    const priorYear = year - 1;
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${otherBook.body.book.id}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'leido', finished_on: `${priorYear}-11-01` })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/goals/${year}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.books_read).toBe(0);
   });
 
   it('GET rejects invalid year', async () => {
