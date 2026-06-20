@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
   forwardRef,
@@ -29,6 +30,8 @@ import { ReadingRecord } from './entities/reading-record.entity';
 
 @Injectable()
 export class BooksService {
+  private readonly logger = new Logger(BooksService.name);
+
   constructor(
     @InjectRepository(Book)
     private readonly booksRepo: Repository<Book>,
@@ -132,14 +135,20 @@ export class BooksService {
     const meta: PatchSideEffectsMetaDto = {};
     if (reading.status === 'leido' && previousStatus !== 'leido') {
       meta.openCompletionModal = true;
-      const tbrCompleted =
-        await this.tbrService.markCompletedIfInActiveMonthTbr(
-          userId,
-          bookId,
-          reading.finishedOn,
+      try {
+        const tbrCompleted =
+          await this.tbrService.markCompletedIfInActiveMonthTbr(
+            userId,
+            bookId,
+            reading.finishedOn,
+          );
+        if (tbrCompleted) {
+          meta.tbrAutoCompleted = true;
+        }
+      } catch (err) {
+        this.logger.warn(
+          `TBR auto-complete failed for book ${bookId}: ${err instanceof Error ? err.message : String(err)}`,
         );
-      if (tbrCompleted) {
-        meta.tbrAutoCompleted = true;
       }
     }
 

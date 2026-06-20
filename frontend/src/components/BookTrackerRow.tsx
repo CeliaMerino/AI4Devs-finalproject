@@ -17,7 +17,10 @@ interface BookTrackerRowProps {
     bookId: string,
     reading: ReadingRecordResource,
   ) => void;
-  onUpdated: (tbrAutoCompleted?: boolean) => void;
+  onUpdated: (
+    tbrAutoCompleted?: boolean,
+    finishedOn?: string | null,
+  ) => void;
 }
 
 export function BookTrackerRow({
@@ -41,7 +44,7 @@ export function BookTrackerRow({
       if (data.meta?.openCompletionModal) {
         onOpenCompletionModal(book.id, data.reading);
       }
-      onUpdated(data.meta?.tbrAutoCompleted);
+      onUpdated(data.meta?.tbrAutoCompleted, data.reading.finished_on);
     },
     onError: (err) => {
       setFieldError(messageFromUnknownError(err));
