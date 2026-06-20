@@ -117,6 +117,8 @@ Como **lectora frecuente**, quiero **tener una lista TBR mensual creada automát
 | Campo | Valor |
 | --- | --- |
 | **Título** | Definir y visualizar objetivo anual |
+| **Jira** | [KAN-11](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-11) |
+| **UC** | UC-06 |
 
 ### Historia
 
@@ -236,7 +238,7 @@ Esta historia cubre el ciclo de vida de un libro **una vez está en la bibliotec
 | Escenario | Dependencia |
 | --- | --- |
 | 8 · Efecto en TBR al marcar `leido` | [KAN-13](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-13) (`TBRService`, tablas `monthly_tbr_lists` / `tbr_entries`; infra KAN-10) |
-| 9 · Efecto en meta anual | KAN-11 (`GoalService`, tabla `annual_reading_goals`) |
+| 9 · Efecto en meta anual | [KAN-11](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-11) (`GoalService`, tabla `annual_reading_goals`; invalidación caché Home al marcar `leido`) |
 
 ### Notas técnicas
 

@@ -1,5 +1,6 @@
 import { ApiRequestError } from './errors';
 import type {
+  AnnualGoalResponse,
   ApiError,
   Book,
   BookCreatedResponse,
@@ -133,6 +134,20 @@ export async function removeTbrEntry(
 ): Promise<void> {
   return request(`/tbr/${year}/${month}/entries/${entryId}`, {
     method: 'DELETE',
+  });
+}
+
+export async function getAnnualGoal(year: number): Promise<AnnualGoalResponse> {
+  return request(`/goals/${year}`);
+}
+
+export async function upsertAnnualGoal(
+  year: number,
+  targetBookCount: number,
+): Promise<AnnualGoalResponse> {
+  return request(`/goals/${year}`, {
+    method: 'PUT',
+    body: JSON.stringify({ target_book_count: targetBookCount }),
   });
 }
 

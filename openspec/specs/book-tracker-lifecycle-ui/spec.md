@@ -75,7 +75,7 @@ Status selectors and star rating controls SHALL be operable via keyboard followi
 
 ### Requirement: Cache coherence
 
-The client SHALL invalidate or update the TanStack Query `['books']` cache after successful reading-record mutations. When the PATCH response includes `meta.tbrAutoCompleted: true`, the client SHALL also invalidate the active month's TBR query `['tbr', year, month]` (UTC calendar month of `reading.finished_on`, or current UTC month as fallback).
+The client SHALL invalidate or update the TanStack Query `['books']` cache after successful reading-record mutations. When the PATCH response includes `meta.tbrAutoCompleted: true`, the client SHALL also invalidate the active month's TBR query `['tbr', year, month]` (UTC calendar month of `reading.finished_on`, or current UTC month as fallback). When status transitions to `leido`, the client SHALL invalidate `['goals', year]` where `year` is the UTC calendar year of `reading.finished_on` (or current UTC year when `finished_on` is absent).
 
 #### Scenario: List refresh after patch
 
@@ -86,3 +86,8 @@ The client SHALL invalidate or update the TanStack Query `['books']` cache after
 
 - **WHEN** the user marks a book as read from Book Tracker and the PATCH response includes `meta.tbrAutoCompleted: true`
 - **THEN** the client invalidates `['tbr', year, month]` for the active month so `/lists` shows the entry completed on next fetch
+
+#### Scenario: Goals cache invalidation on mark as read (KAN-11)
+
+- **WHEN** a reading-record PATCH transitions status to `leido`
+- **THEN** the client invalidates `['goals', year]` for the UTC year of `reading.finished_on` so the Home goal card reflects the new count on next fetch
