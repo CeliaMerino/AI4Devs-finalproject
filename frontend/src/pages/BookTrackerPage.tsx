@@ -23,12 +23,15 @@ export function BookTrackerPage() {
     queryFn: listBooks,
   });
 
-  const invalidateBooks = (tbrAutoCompleted?: boolean) => {
+  const invalidateBooks = (
+    tbrAutoCompleted?: boolean,
+    finishedOn?: string | null,
+  ) => {
     queryClient.invalidateQueries({ queryKey: ['books'] });
     if (tbrAutoCompleted) {
-      const now = new Date();
+      const ref = finishedOn ? new Date(`${finishedOn}T00:00:00Z`) : new Date();
       queryClient.invalidateQueries({
-        queryKey: ['tbr', now.getUTCFullYear(), now.getUTCMonth() + 1],
+        queryKey: ['tbr', ref.getUTCFullYear(), ref.getUTCMonth() + 1],
       });
     }
   };

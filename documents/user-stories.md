@@ -235,13 +235,13 @@ Esta historia cubre el ciclo de vida de un libro **una vez está en la bibliotec
 
 | Escenario | Dependencia |
 | --- | --- |
-| 8 · Efecto en TBR al marcar `leido` | KAN-10 (`TBRService`, tablas `monthly_tbr_lists` / `tbr_entries`) |
+| 8 · Efecto en TBR al marcar `leido` | [KAN-13](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-13) (`TBRService`, tablas `monthly_tbr_lists` / `tbr_entries`; infra KAN-10) |
 | 9 · Efecto en meta anual | KAN-11 (`GoalService`, tabla `annual_reading_goals`) |
 
 ### Notas técnicas
 
 - **API:** `PATCH /v1/books/{bookId}/reading-record` — campos mutables: `status`, `started_on`, `finished_on`, `rating`, `read_format`
-- **Respuesta:** `meta.openCompletionModal: true` al transicionar a `leido`; ignorar `meta.tbrAutoCompleted` en esta historia
+- **Respuesta:** `meta.openCompletionModal: true` al transicionar a `leido`; `meta.tbrAutoCompleted` en escenario 8 → KAN-13
 - **Persistencia:** tabla `reading_records` (1:1 con `books`)
 - **UI:** edición inline en tabla; modal solo en transición a `leido`; invalidación de caché TanStack Query; accesibilidad teclado en selector y estrellas (WCAG 2.1 AA)
 
