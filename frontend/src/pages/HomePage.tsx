@@ -23,6 +23,7 @@ export function HomePage() {
           <span className="home-nav__current">Home</span>
           <Link to="/book-tracker">Book Tracker</Link>
           <Link to="/lists">Lists</Link>
+          <Link to="/stats">Reading Stats</Link>
         </nav>
         <h1>Reading Analytics</h1>
       </header>

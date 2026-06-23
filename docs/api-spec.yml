@@ -27,6 +27,8 @@ tags:
     description: Monthly To Be Read lists (UC-05)
   - name: Goals
     description: Annual reading goals and progress (UC-06)
+  - name: Stats
+    description: Monthly reading statistics dashboard (UC-07)
 
 paths:
   /auth/dev-login:
@@ -343,6 +345,49 @@ paths:
                 $ref: '#/components/schemas/AnnualGoalResponse'
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /stats/{year}/{month}:
+    get:
+      summary: Get monthly reading statistics
+      description: >-
+        Returns read-only reading statistics for the authenticated user for the
+        given calendar month, computed from `reading_records` joined to `books`.
+        A book counts when `status = leido` and `finished_on` is within the
+        month. Always 200; an empty month returns zeroed totals and empty
+        distributions. No statistics are persisted.
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Monthly statistics snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyStatsResponse'
+        '400':
+          description: Invalid year or month
           content:
             application/json:
               schema:
@@ -967,6 +1012,65 @@ components:
           oneOf:
             - $ref: '#/components/schemas/GoalForecast'
             - type: 'null'
+
+    GenreCount:
+      type: object
+      required: [genre, count]
+      properties:
+        genre:
+          type: string
+          description: Genre name, or `unknown` when the book has no genre.
+        count:
+          type: integer
+
+    FormatCount:
+      type: object
+      required: [format, count]
+      properties:
+        format:
+          type: string
+          description: Read format (`fisico` | `ebook` | `audio`), or `unknown` when unset.
+        count:
+          type: integer
+
+    MonthlyStatsResponse:
+      type: object
+      required:
+        - year
+        - month
+        - books_read
+        - pages_read
+        - average_rating
+        - genre_distribution
+        - format_distribution
+        - predominant_format
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        books_read:
+          type: integer
+        pages_read:
+          type: integer
+        average_rating:
+          oneOf:
+            - type: number
+            - type: 'null'
+          description: Mean rating over rated books, rounded to two decimals; null when none rated.
+        genre_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenreCount'
+        format_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormatCount'
+        predominant_format:
+          oneOf:
+            - type: string
+            - type: 'null'
+          description: Most frequent non-unknown format; null when no format recorded.
 
     BookDuplicateError:
       type: object

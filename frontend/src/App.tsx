@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { BookTrackerPage } from './pages/BookTrackerPage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
+import { StatsPage } from './pages/StatsPage';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -42,6 +43,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <ListsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/stats"
+        element={
+          <PrivateRoute>
+            <StatsPage />
           </PrivateRoute>
         }
       />

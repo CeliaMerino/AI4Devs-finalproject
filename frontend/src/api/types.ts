@@ -148,6 +148,27 @@ export interface AnnualGoalResponse {
   forecast: GoalForecast | null;
 }
 
+export interface GenreCount {
+  genre: string;
+  count: number;
+}
+
+export interface FormatCount {
+  format: string;
+  count: number;
+}
+
+export interface MonthlyStatsResponse {
+  year: number;
+  month: number;
+  books_read: number;
+  pages_read: number;
+  average_rating: number | null;
+  genre_distribution: GenreCount[];
+  format_distribution: FormatCount[];
+  predominant_format: string | null;
+}
+
 export interface CreateBookPayload {
   title: string;
   authors: string;
