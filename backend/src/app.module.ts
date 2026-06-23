@@ -11,6 +11,7 @@ import { AnnualReadingGoal } from './goals/entities/annual-reading-goal.entity';
 import { ListsModule } from './lists/lists.module';
 import { MonthlyTbrList } from './lists/entities/monthly-tbr-list.entity';
 import { TbrEntry } from './lists/entities/tbr-entry.entity';
+import { StatsModule } from './stats/stats.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     BooksModule,
     ListsModule,
     GoalsModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

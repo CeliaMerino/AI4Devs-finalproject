@@ -272,6 +272,7 @@ Esta historia cubre el ciclo de vida de un libro **una vez está en la bibliotec
 | **Jira** | [KAN-15](https://privaterelay-team-ymuts08n.atlassian.net/browse/KAN-15) |
 | **Título** | Consultar dashboard de estadísticas mensuales |
 | **UC** | UC-07 (KPIs y gráficos; sin insights — ver US-06) |
+| **Estado** | Implementado — `GET /v1/stats/{year}/{month}` y página `/stats` (ver `openspec/changes/kan-15-monthly-stats-dashboard/`) |
 
 ### Historia
 

@@ -11,6 +11,7 @@ import {
   invalidateGoalsForReadingUpdate,
   type ReadingRecordUpdateContext,
 } from '../lib/goalsCacheInvalidation';
+import { invalidateStatsForReadingUpdate } from '../lib/statsCacheInvalidation';
 import './BookTrackerPage.css';
 
 export function BookTrackerPage() {
@@ -40,6 +41,7 @@ export function BookTrackerPage() {
       });
     }
     invalidateGoalsForReadingUpdate(queryClient, ctx);
+    invalidateStatsForReadingUpdate(queryClient, ctx);
   };
 
   const completionMutation = useMutation({

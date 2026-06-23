@@ -193,9 +193,13 @@ Canonical migration: `backend/src/migrations/1735689600000-CreateBooksAndReading
 
 Run: `npm run migration:run` from `backend/`.
 
+## Computed (not persisted)
+
+Monthly reading statistics (UC-07, KAN-15) are **computed on read** from `reading_records` joined to `books` (`status = leido`, `finished_on` within the month) and exposed at `GET /v1/stats/{year}/{month}`. There is no statistics table; nothing is denormalized or stored.
+
 ## Planned extensions (not in schema yet)
 
-Document in OpenSpec before adding tables: tags, import batches, stats aggregates. Keep `docs/data-model.md` and `docs/api-spec.yml` in sync when implementing.
+Document in OpenSpec before adding tables: tags, import batches. Keep `docs/data-model.md` and `docs/api-spec.yml` in sync when implementing.
 
 ## Related documentation
 

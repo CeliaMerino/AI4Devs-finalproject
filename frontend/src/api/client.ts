@@ -8,6 +8,7 @@ import type {
   CatalogSearchResponse,
   CreateBookPayload,
   EditionCoversResponse,
+  MonthlyStatsResponse,
   MonthlyTbrResponse,
   PatchReadingRecordPayload,
   ReadingRecordPatchedResponse,
@@ -149,6 +150,13 @@ export async function upsertAnnualGoal(
     method: 'PUT',
     body: JSON.stringify({ target_book_count: targetBookCount }),
   });
+}
+
+export async function getMonthlyStats(
+  year: number,
+  month: number,
+): Promise<MonthlyStatsResponse> {
+  return request(`/stats/${year}/${month}`);
 }
 
 export function catalogEditionToCreatePayload(
