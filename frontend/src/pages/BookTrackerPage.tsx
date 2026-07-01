@@ -116,6 +116,7 @@ export function BookTrackerPage() {
             <th>Título</th>
             <th>Autora</th>
             <th>Género</th>
+            <th>Audiencia</th>
             <th>Páginas</th>
             <th>Estado</th>
             <th>Inicio</th>
@@ -130,6 +131,7 @@ export function BookTrackerPage() {
               book={book}
               onOpenCompletionModal={handleOpenCompletion}
               onUpdated={invalidateAfterReadingUpdate}
+              onBookUpdated={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
             />
           ))}
         </tbody>

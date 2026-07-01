@@ -2,6 +2,7 @@ import { ApiRequestError } from './errors';
 import type {
   AnnualGoalResponse,
   ApiError,
+  AudienceType,
   Book,
   BookCreatedResponse,
   CatalogEdition,
@@ -10,6 +11,7 @@ import type {
   EditionCoversResponse,
   MonthlyStatsResponse,
   MonthlyTbrResponse,
+  PatchBookPayload,
   PatchReadingRecordPayload,
   ReadingRecordPatchedResponse,
   TbrEntry,
@@ -100,6 +102,16 @@ export async function listBooks(): Promise<Book[]> {
   return request('/books');
 }
 
+export async function patchBook(
+  bookId: string,
+  body: PatchBookPayload,
+): Promise<Book> {
+  return request(`/books/${bookId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function patchReadingRecord(
   bookId: string,
   body: PatchReadingRecordPayload,
@@ -162,6 +174,7 @@ export async function getMonthlyStats(
 export function catalogEditionToCreatePayload(
   edition: CatalogEdition,
   coverUrl?: string | null,
+  audience?: AudienceType | null,
 ): CreateBookPayload {
   return {
     title: edition.title,
@@ -173,5 +186,6 @@ export function catalogEditionToCreatePayload(
     genre: edition.genre,
     data_source: edition.data_source,
     external_provider_id: edition.external_provider_id,
+    audience: audience ?? null,
   };
 }

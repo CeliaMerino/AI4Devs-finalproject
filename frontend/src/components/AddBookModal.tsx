@@ -6,7 +6,8 @@ import {
   searchCatalog,
 } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
-import type { CatalogEdition, CoverOption } from '../api/types';
+import type { AudienceType, CatalogEdition, CoverOption } from '../api/types';
+import { AudienceSelect } from './AudienceSelect';
 import { CoverPicker } from './CoverPicker';
 import './AddBookModal.css';
 
@@ -31,6 +32,7 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
   const [searchLoading, setSearchLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audience, setAudience] = useState<AudienceType | null>(null);
 
   const resetState = useCallback(() => {
     setStep('search');
@@ -45,6 +47,7 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
     setSearchLoading(false);
     setSaving(false);
     setError(null);
+    setAudience(null);
   }, []);
 
   useEffect(() => {
@@ -146,7 +149,9 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
     const coverUrl = selectedCover?.url ?? null;
 
     try {
-      await createBook(catalogEditionToCreatePayload(selectedEdition, coverUrl));
+      await createBook(
+        catalogEditionToCreatePayload(selectedEdition, coverUrl, audience),
+      );
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -154,7 +159,7 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
     } finally {
       setSaving(false);
     }
-  }, [selectedEdition, selectedCover, covers.length, onSaved, onClose]);
+  }, [selectedEdition, selectedCover, covers.length, audience, onSaved, onClose]);
 
   if (!open) return null;
 
@@ -249,6 +254,13 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
               error={coversError}
               onRetry={() => loadCovers(selectedEdition)}
               editionTitle={selectedEdition.title}
+            />
+            <AudienceSelect
+              id="add-book-audience"
+              label="Audience"
+              value={audience}
+              onChange={setAudience}
+              disabled={saving}
             />
           </>
         )}

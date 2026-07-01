@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-19",
-  "current_ticket": null,
+  "current_ticket": "KAN-35",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -23,6 +23,16 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/19",
       "pr_number": 19,
       "archived_at": "2026-07-01T17:30:00Z",
+      "error": null
+    },
+    "KAN-35": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-35-audience-column-api",
+      "branch": "feature/KAN-35-audience-column-api",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/20",
+      "pr_number": 20,
+      "archived_at": null,
       "error": null
     }
   }

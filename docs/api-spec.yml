@@ -105,6 +105,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookDuplicateError'
 
+  /books/{bookId}:
+    patch:
+      summary: Update book metadata
+      description: Partial update of user-owned book fields (e.g. audience). KAN-35; extensible for manual edit (KAN-26).
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchBookRequest'
+      responses:
+        '200':
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          description: Validation error or empty body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Book not found or not owned by user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /books/{bookId}/reading-record:
     patch:
       summary: Update reading status, dates, rating, or format
@@ -521,6 +563,11 @@ components:
       type: string
       enum: [open_library, google_books, goodreads, manual]
 
+    Audience:
+      type: string
+      nullable: true
+      enum: [young_adult, new_adult, adult]
+
     CatalogDataSource:
       type: string
       enum: [open_library, google_books]
@@ -684,6 +731,8 @@ components:
         notes:
           type: string
           nullable: true
+        audience:
+          $ref: '#/components/schemas/Audience'
         created_at:
           type: string
           format: date-time
@@ -760,6 +809,14 @@ components:
         notes:
           type: string
           nullable: true
+        audience:
+          $ref: '#/components/schemas/Audience'
+
+    PatchBookRequest:
+      type: object
+      properties:
+        audience:
+          $ref: '#/components/schemas/Audience'
 
     BookCreatedResponse:
       type: object

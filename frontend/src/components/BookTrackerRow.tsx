@@ -1,14 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { patchReadingRecord } from '../api/client';
+import { patchBook, patchReadingRecord } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
 import type {
+  AudienceType,
   Book,
   ReadingRecordPatchedResponse,
   ReadingRecordResource,
 } from '../api/types';
 import type { ReadingRecordUpdateContext } from '../lib/goalsCacheInvalidation';
 import { InlineDateField } from './InlineDateField';
+import { AudienceSelect } from './AudienceSelect';
 import { ReadingStatusSelect } from './ReadingStatusSelect';
 import { StarRating } from './StarRating';
 
@@ -21,12 +23,14 @@ interface BookTrackerRowProps {
   onUpdated: (
     ctx: ReadingRecordUpdateContext & { tbrAutoCompleted?: boolean },
   ) => void;
+  onBookUpdated: () => void;
 }
 
 export function BookTrackerRow({
   book,
   onOpenCompletionModal,
   onUpdated,
+  onBookUpdated,
 }: BookTrackerRowProps) {
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -57,6 +61,18 @@ export function BookTrackerRow({
     },
   });
 
+  const bookMutation = useMutation({
+    mutationFn: (audience: AudienceType | null) =>
+      patchBook(book.id, { audience }),
+    onSuccess: () => {
+      setFieldError(null);
+      onBookUpdated();
+    },
+    onError: (err) => {
+      setFieldError(messageFromUnknownError(err));
+    },
+  });
+
   const patch = (body: Parameters<typeof patchReadingRecord>[1]) => {
     mutation.mutate(body);
   };
@@ -73,6 +89,16 @@ export function BookTrackerRow({
       <td>{book.title}</td>
       <td>{book.authors}</td>
       <td>{book.genre ?? '—'}</td>
+      <td className="audience-cell">
+        <AudienceSelect
+          id={`audience-${book.id}`}
+          label={`Audience for ${book.title}`}
+      className="audience-select--inline"
+          value={book.audience}
+          disabled={mutation.isPending || bookMutation.isPending}
+          onChange={(next) => bookMutation.mutate(next)}
+        />
+      </td>
       <td>{book.page_count ?? '—'}</td>
       <td className="status-cell">
         <ReadingStatusSelect

@@ -8,7 +8,9 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
+import type { AudienceType } from '../entities/book.entity';
 export class CreateBookDto {
   @IsString()
   @MinLength(1)
@@ -66,4 +68,9 @@ export class CreateBookDto {
   @IsString()
   @MaxLength(10000)
   notes?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsEnum(['young_adult', 'new_adult', 'adult'])
+  audience?: AudienceType | null;
 }

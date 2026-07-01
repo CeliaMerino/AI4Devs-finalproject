@@ -51,10 +51,13 @@ Metadata for a title in the user’s library.
 | dataSource | `data_source` | VARCHAR(32) | NOT NULL; see enum below |
 | externalProviderId | `external_provider_id` | VARCHAR(128) | NULL (catalog edition id) |
 | notes | `notes` | TEXT | NULL |
+| audience | `audience` | VARCHAR(32) | NULL; `young_adult` \| `new_adult` \| `adult` |
 | createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
 | updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
 
 **data_source enum:** `open_library` | `google_books` | `goodreads` | `manual`
+
+**audience enum (nullable):** `young_adult` | `new_adult` | `adult`
 
 **Uniqueness (application layer):** per user, duplicate blocked by `isbn_13` or (`data_source` + `external_provider_id`) — see `BooksService.assertNotDuplicate`.
 
