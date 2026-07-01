@@ -152,6 +152,8 @@ export function BookTrackerPage() {
         mode="edit"
         book={editingBook}
         onClose={() => setEditingBook(null)}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
+        onOpenCompletionModal={handleOpenCompletion}
       />
 
       <CompletionModal
