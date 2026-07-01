@@ -56,12 +56,12 @@
       "error": null
     },
     "KAN-28": {
-      "status": "in_progress",
+      "status": "awaiting_merge",
       "failed_step": null,
       "change_name": "kan-28-book-form-ui",
       "branch": "feature/KAN-28-book-form-ui",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/23",
+      "pr_number": 23,
       "archived_at": null,
       "error": null
     }
