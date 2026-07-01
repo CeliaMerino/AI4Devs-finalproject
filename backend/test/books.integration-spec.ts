@@ -243,4 +243,80 @@ describe('Books API (integration)', () => {
 
     expect(res.body.audience).toBeNull();
   });
+
+  it('POST /v1/books creates manual book with full metadata', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Manual Title',
+        authors: 'Manual Author',
+        data_source: 'manual',
+        cover_image_url: 'https://example.com/cover.jpg',
+        page_count: 200,
+        genre: 'Fantasy',
+        series_name: 'Manual Series',
+        publication_year: 2020,
+        audience: 'new_adult',
+        notes: 'Signed copy',
+      })
+      .expect(201);
+
+    expect(res.body.book.data_source).toBe('manual');
+    expect(res.body.book.title).toBe('Manual Title');
+    expect(res.body.book.page_count).toBe(200);
+    expect(res.body.book.genre).toBe('Fantasy');
+    expect(res.body.book.series_name).toBe('Manual Series');
+    expect(res.body.book.publication_year).toBe(2020);
+    expect(res.body.book.notes).toBe('Signed copy');
+    expect(res.body.reading.status).toBe('pendiente');
+  });
+
+  it('PATCH /v1/books/{bookId} updates multiple metadata fields', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Updated Title',
+        authors: 'Updated Author',
+        page_count: 350,
+        genre: 'Speculative fiction',
+        series_name: 'Hainish Cycle',
+        publication_year: 1969,
+        notes: 'Library edition',
+      })
+      .expect(200);
+
+    expect(res.body.title).toBe('Updated Title');
+    expect(res.body.authors).toBe('Updated Author');
+    expect(res.body.page_count).toBe(350);
+    expect(res.body.genre).toBe('Speculative fiction');
+    expect(res.body.series_name).toBe('Hainish Cycle');
+    expect(res.body.publication_year).toBe(1969);
+    expect(res.body.notes).toBe('Library edition');
+  });
+
+  it('PATCH /v1/books/{bookId} rejects empty body', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({})
+      .expect(400);
+  });
+
+  it('PATCH /v1/books/{bookId} rejects negative page_count', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ page_count: -1 })
+      .expect(400);
+  });
+
+  it('PATCH /v1/books/{bookId} returns 404 for book owned by another user', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({ title: 'Hijacked' })
+      .expect(404);
+  });
 });

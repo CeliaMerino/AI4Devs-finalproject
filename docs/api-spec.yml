@@ -108,7 +108,7 @@ paths:
   /books/{bookId}:
     patch:
       summary: Update book metadata
-      description: Partial update of user-owned book fields (e.g. audience). KAN-35; extensible for manual edit (KAN-26).
+      description: Partial update of user-owned book fields (metadata for manual edit). KAN-35 audience; KAN-27 full book fields.
       tags: [Books]
       security:
         - bearerAuth: []
@@ -814,9 +814,38 @@ components:
 
     PatchBookRequest:
       type: object
+      minProperties: 1
       properties:
+        title:
+          type: string
+          minLength: 1
+        authors:
+          type: string
+          minLength: 1
+        cover_image_url:
+          type: string
+          format: uri
+          nullable: true
+        page_count:
+          type: integer
+          minimum: 0
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        series_name:
+          type: string
+          nullable: true
+        publication_year:
+          type: integer
+          minimum: 1000
+          maximum: 2100
+          nullable: true
         audience:
           $ref: '#/components/schemas/Audience'
+        notes:
+          type: string
+          nullable: true
 
     BookCreatedResponse:
       type: object
