@@ -36,7 +36,7 @@ The frontend is a **Vite + React 19 + TypeScript** SPA for **Reading Analytics P
 | Routing | React Router 7 |
 | Server state | TanStack Query 5 (`QueryClientProvider` in `App.tsx`) |
 | HTTP | Native `fetch` via `frontend/src/api/client.ts` |
-| Styling | Co-located CSS per page/component (no UI kit in MVP) |
+| Styling | Co-located CSS per page/component; **design tokens** in `frontend/src/theme/` and **base UI** in `frontend/src/components/ui/` (KAN-18) |
 
 ## Project Structure
 
@@ -47,7 +47,10 @@ frontend/
 ├── src/
 │   ├── main.tsx
 │   ├── App.tsx              # Router + QueryClient + AuthProvider
-│   ├── index.css            # Global tokens (evolve toward brand palette)
+│   ├── index.css            # App shell; imports theme/base.css
+│   ├── theme/
+│   │   ├── tokens.css       # PRD palette + semantic CSS variables
+│   │   └── base.css         # Global typography and focus defaults
 │   ├── api/
 │   │   ├── client.ts        # All HTTP calls
 │   │   ├── types.ts         # API types (snake_case fields)
@@ -59,6 +62,7 @@ frontend/
 │   │   ├── BookTrackerPage.tsx
 │   │   └── ListsPage.tsx
 │   └── components/
+│       ├── ui/              # Shared design-system components (Button, Card, …)
 │       ├── AddBookModal.tsx
 │       ├── BookTrackerRow.tsx
 │       ├── CompletionModal.tsx
@@ -152,8 +156,10 @@ Avoid global stores until cross-cutting client state justifies them.
 
 - **Desktop-first** reading analytics (not social).
 - **Style:** soft feminine / coquette — warm, clean, journaling-like.
-- **Palette (target):** Veranda blue `#6BB1AD`, Sky cloud `#A7BCBD`, Lychee `#ECECDB`, Melon `#E5A9A9`, Cupid pink `#E6748E`, white backgrounds.
+- **Palette (tokens):** see `docs/design-system-palette.md` and `frontend/src/theme/tokens.css`
 - **Accessibility:** WCAG 2.1 AA — semantic HTML, labels on inputs, keyboard access for modals, sufficient contrast when applying brand colors.
+
+Import shared primitives from `frontend/src/components/ui/` for new UI work. Page-level restyles migrate in KAN-20+.
 
 ### Patterns
 
@@ -162,7 +168,7 @@ Avoid global stores until cross-cutting client state justifies them.
 - Empty library: helpful empty state on Book Tracker.
 - Images: `cover_image_url` with alt text from book title.
 
-Gradually replace Vite starter tokens in `index.css` with brand CSS variables when touching global styles.
+Gradually replace legacy page CSS with `components/ui` and semantic tokens when touching each page (Phase 3 restyle).
 
 ## Testing
 
