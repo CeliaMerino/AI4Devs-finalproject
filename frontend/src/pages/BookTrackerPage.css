@@ -1,125 +1,120 @@
 .book-tracker {
-  padding: 2rem;
-  max-width: 1100px;
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
-.tracker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+.tracker-status,
+.tracker-empty {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
 }
 
-.tracker-header h1 {
-  margin: 0;
-  color: #2d4a4a;
-  font-weight: 600;
-}
-
-.btn-add {
-  background: #6bb1ad;
-  color: #fff;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.btn-add:hover {
-  background: #5a9e9a;
-}
-
-.tracker-empty,
 .tracker-error {
-  color: #5a6e6e;
+  color: var(--color-danger);
+  margin: 0 0 var(--space-4);
+}
+
+.books-table-scroll {
+  box-shadow: var(--shadow-md);
 }
 
 .books-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
+  min-width: 72rem;
+  table-layout: fixed;
+}
+
+.books-table .col-cover {
+  width: 3.5rem;
+}
+
+.books-table .col-title {
+  min-width: 10rem;
+  width: 12rem;
+  max-width: 14rem;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.books-table th,
-.books-table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #ececdb;
+.books-table .col-author {
+  min-width: 6rem;
+  width: 8rem;
 }
 
-.books-table th {
-  background: #a7bcbd;
-  color: #2d4a4a;
-  font-weight: 600;
+.books-table .col-genre {
+  min-width: 6rem;
+  width: 7rem;
+}
+
+.books-table .col-audience {
+  min-width: 7.5rem;
+  width: 8.5rem;
+}
+
+.books-table .col-pages {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.books-table .col-status {
+  min-width: 7.5rem;
+  width: 8.5rem;
+}
+
+.books-table .col-date {
+  min-width: 9rem;
+  width: 9.5rem;
+}
+
+.books-table .col-format {
+  min-width: 7rem;
+  width: 8rem;
+}
+
+.books-table .col-rating {
+  min-width: 7rem;
+  width: 8rem;
+}
+
+.books-table .col-actions {
+  width: 3rem;
+  text-align: center;
 }
 
 .table-cover {
-  width: 40px;
-  height: 60px;
+  display: block;
+  width: 2.5rem;
+  height: 3.75rem;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .no-cover {
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .tracker-select,
 .tracker-date {
-  font-size: 0.875rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #c5d4d4;
-  border-radius: 6px;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   max-width: 100%;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
-.status-cell {
-  min-width: 120px;
-}
-
-.format-cell {
-  min-width: 110px;
-}
-
-.star-rating {
-  display: flex;
-  gap: 0.15rem;
-}
-
-.star-btn {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: #ccc;
-  cursor: pointer;
-  padding: 0.1rem;
-  line-height: 1;
-}
-
-.star-btn.star-filled {
-  color: #e6a817;
-}
-
-.star-btn:focus-visible {
-  outline: 2px solid #6bb1ad;
-  outline-offset: 2px;
+.tracker-select:focus-visible,
+.tracker-date:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .row-error {
   display: block;
-  margin-top: 0.35rem;
-  font-size: 0.75rem;
-  color: #b33;
-}
-
-.actions-cell {
-  width: 3rem;
-  text-align: center;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
 }
 
 .row-edit-btn {
@@ -130,19 +125,19 @@
   height: 2rem;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: #2d4a4a;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .row-edit-btn:hover:not(:disabled) {
-  background: #ececdb;
+  background: var(--color-surface-muted);
 }
 
 .row-edit-btn:focus-visible {
-  outline: 2px solid #6bb1ad;
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .row-edit-btn:disabled {
@@ -153,4 +148,16 @@
 .row-edit-icon {
   width: 1.125rem;
   height: 1.125rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

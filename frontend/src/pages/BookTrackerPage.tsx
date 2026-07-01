@@ -7,6 +7,7 @@ import { AddBookModal } from '../components/AddBookModal';
 import { BookFormModal } from '../components/BookFormModal';
 import { BookTrackerRow } from '../components/BookTrackerRow';
 import { CompletionModal } from '../components/CompletionModal';
+import { Button, PageHeader, Table, TableScroll } from '../components/ui';
 import {
   invalidateGoalsForReadingUpdate,
   type ReadingRecordUpdateContext,
@@ -86,19 +87,21 @@ export function BookTrackerPage() {
 
   return (
     <div className="book-tracker">
-      <header className="tracker-header">
-        <h1>Book Tracker</h1>
-        <button
-          type="button"
-          className="btn-add"
-          onClick={() => setModalOpen(true)}
-        >
-          Añadir libro
-        </button>
-      </header>
+      <PageHeader
+        title="Book Tracker"
+        actions={
+          <Button type="button" onClick={() => setModalOpen(true)}>
+            Añadir libro
+          </Button>
+        }
+      />
 
-      {isLoading && <p>Cargando biblioteca…</p>}
-      {error && <p className="tracker-error">No se pudo cargar la biblioteca.</p>}
+      {isLoading && <p className="tracker-status">Cargando biblioteca…</p>}
+      {error && (
+        <p className="tracker-error" role="alert">
+          No se pudo cargar la biblioteca.
+        </p>
+      )}
       {completionMutation.isError && (
         <p className="tracker-error" role="alert">
           {messageFromUnknownError(completionMutation.error)}
@@ -106,39 +109,75 @@ export function BookTrackerPage() {
       )}
 
       {!isLoading && books.length === 0 && (
-        <p className="tracker-empty">Aún no tienes libros. Pulsa «Añadir libro» para empezar.</p>
+        <p className="tracker-empty">
+          Aún no tienes libros. Pulsa «Añadir libro» para empezar.
+        </p>
       )}
 
-      <table className="books-table">
-        <thead>
-          <tr>
-            <th>Portada</th>
-            <th>Título</th>
-            <th>Autora</th>
-            <th>Género</th>
-            <th>Audiencia</th>
-            <th>Páginas</th>
-            <th>Estado</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Formato</th>
-            <th>Puntuación</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {books.map((book) => (
-            <BookTrackerRow
-              key={book.id}
-              book={book}
-              onOpenCompletionModal={handleOpenCompletion}
-              onUpdated={invalidateAfterReadingUpdate}
-              onBookUpdated={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
-              onEditBook={setEditingBook}
-            />
-          ))}
-        </tbody>
-      </table>
+      {!isLoading && books.length > 0 && (
+        <TableScroll
+          aria-label="Biblioteca de libros"
+          className="books-table-scroll"
+          tabIndex={0}
+        >
+          <Table className="books-table">
+            <thead>
+              <tr>
+                <th scope="col" className="col-cover">
+                  Portada
+                </th>
+                <th scope="col" className="col-title">
+                  Título
+                </th>
+                <th scope="col" className="col-author">
+                  Autora
+                </th>
+                <th scope="col" className="col-genre">
+                  Género
+                </th>
+                <th scope="col" className="col-audience">
+                  Audiencia
+                </th>
+                <th scope="col" className="col-pages">
+                  Páginas
+                </th>
+                <th scope="col" className="col-status">
+                  Estado
+                </th>
+                <th scope="col" className="col-date">
+                  Inicio
+                </th>
+                <th scope="col" className="col-date">
+                  Fin
+                </th>
+                <th scope="col" className="col-format">
+                  Formato
+                </th>
+                <th scope="col" className="col-rating">
+                  Puntuación
+                </th>
+                <th scope="col" className="col-actions">
+                  <span className="visually-hidden">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {books.map((book) => (
+                <BookTrackerRow
+                  key={book.id}
+                  book={book}
+                  onOpenCompletionModal={handleOpenCompletion}
+                  onUpdated={invalidateAfterReadingUpdate}
+                  onBookUpdated={() =>
+                    queryClient.invalidateQueries({ queryKey: ['books'] })
+                  }
+                  onEditBook={setEditingBook}
+                />
+              ))}
+            </tbody>
+          </Table>
+        </TableScroll>
+      )}
 
       <AddBookModal
         open={modalOpen}
