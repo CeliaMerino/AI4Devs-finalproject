@@ -24,6 +24,7 @@ interface BookTrackerRowProps {
     ctx: ReadingRecordUpdateContext & { tbrAutoCompleted?: boolean },
   ) => void;
   onBookUpdated: () => void;
+  onEditBook: (book: Book) => void;
 }
 
 export function BookTrackerRow({
@@ -31,6 +32,7 @@ export function BookTrackerRow({
   onOpenCompletionModal,
   onUpdated,
   onBookUpdated,
+  onEditBook,
 }: BookTrackerRowProps) {
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -93,7 +95,7 @@ export function BookTrackerRow({
         <AudienceSelect
           id={`audience-${book.id}`}
           label={`Audience for ${book.title}`}
-      className="audience-select--inline"
+          className="audience-select--inline"
           value={book.audience}
           disabled={mutation.isPending || bookMutation.isPending}
           onChange={(next) => bookMutation.mutate(next)}
@@ -146,6 +148,22 @@ export function BookTrackerRow({
         ) : (
           '—'
         )}
+      </td>
+      <td className="actions-cell">
+        <button
+          type="button"
+          className="row-edit-btn"
+          aria-label={`Editar ${book.title}`}
+          disabled={mutation.isPending || bookMutation.isPending}
+          onClick={() => onEditBook(book)}
+        >
+          <svg aria-hidden="true" className="row-edit-icon" viewBox="0 0 24 24" focusable="false">
+            <path
+              fill="currentColor"
+              d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm18.71-11.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+            />
+          </svg>
+        </button>
       </td>
     </tr>
   );

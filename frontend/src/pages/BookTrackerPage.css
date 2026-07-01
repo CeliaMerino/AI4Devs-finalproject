@@ -112,3 +112,41 @@
   font-size: 0.75rem;
   color: #b33;
 }
+
+.actions-cell {
+  width: 3rem;
+  text-align: center;
+}
+
+.row-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #2d4a4a;
+  cursor: pointer;
+}
+
+.row-edit-btn:hover:not(:disabled) {
+  background: #ececdb;
+}
+
+.row-edit-btn:focus-visible {
+  outline: 2px solid #6bb1ad;
+  outline-offset: 2px;
+}
+
+.row-edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.row-edit-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
