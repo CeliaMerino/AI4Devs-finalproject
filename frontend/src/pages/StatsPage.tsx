@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getMonthlyStats } from '../api/client';
 import { FormatBreakdown } from '../components/FormatBreakdown';
 import { GenreDistributionChart } from '../components/GenreDistributionChart';
@@ -64,12 +63,6 @@ export function StatsPage() {
   return (
     <div className="stats-page">
       <header className="stats-header">
-        <nav className="stats-nav">
-          <Link to="/">Home</Link>
-          <Link to="/book-tracker">Book Tracker</Link>
-          <Link to="/lists">Lists</Link>
-          <span className="stats-nav__current">Reading Stats</span>
-        </nav>
         <h1>Reading Stats</h1>
         <label className="stats-month-picker">
           Mes

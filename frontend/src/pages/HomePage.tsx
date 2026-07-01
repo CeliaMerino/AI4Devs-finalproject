@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { getAnnualGoal } from '../api/client';
 import { AnnualGoalCard } from '../components/AnnualGoalCard';
 import './HomePage.css';
@@ -19,12 +18,6 @@ export function HomePage() {
   return (
     <div className="home-page">
       <header className="home-header">
-        <nav className="home-nav">
-          <span className="home-nav__current">Home</span>
-          <Link to="/book-tracker">Book Tracker</Link>
-          <Link to="/lists">Lists</Link>
-          <Link to="/stats">Reading Stats</Link>
-        </nav>
         <h1>Reading Analytics</h1>
       </header>
 
