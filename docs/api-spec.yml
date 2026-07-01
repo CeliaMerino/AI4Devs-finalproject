@@ -597,7 +597,9 @@ components:
           minimum: 1
           maximum: 5
         read_format:
-          $ref: '#/components/schemas/ReadFormat'
+          oneOf:
+            - $ref: '#/components/schemas/ReadFormat'
+            - type: 'null'
 
     ReadingRecordResource:
       type: object

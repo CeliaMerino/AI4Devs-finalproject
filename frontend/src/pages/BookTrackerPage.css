@@ -82,6 +82,10 @@
   min-width: 120px;
 }
 
+.format-cell {
+  min-width: 110px;
+}
+
 .star-rating {
   display: flex;
   gap: 0.15rem;

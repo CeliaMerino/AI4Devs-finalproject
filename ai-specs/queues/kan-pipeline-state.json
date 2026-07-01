@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-29",
-  "current_ticket": null,
+  "current_ticket": "KAN-30",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -73,6 +73,16 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/24",
       "pr_number": 24,
       "archived_at": "2026-07-01T18:30:00Z",
+      "error": null
+    },
+    "KAN-30": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-30-selectable-read-format",
+      "branch": "feature/KAN-30-selectable-read-format",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/25",
+      "pr_number": 25,
+      "archived_at": null,
       "error": null
     }
   }

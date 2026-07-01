@@ -5,6 +5,7 @@ import {
   IsOptional,
   Max,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import type { ReadingStatus } from '../entities/reading-record.entity';
 
@@ -28,6 +29,7 @@ export class PatchReadingRecordDto {
   rating?: number;
 
   @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
   @IsEnum(['fisico', 'ebook', 'audio'])
-  read_format?: 'fisico' | 'ebook' | 'audio';
+  read_format?: 'fisico' | 'ebook' | 'audio' | null;
 }

@@ -319,4 +319,52 @@ describe('Books API (integration)', () => {
       .send({ title: 'Hijacked' })
       .expect(404);
   });
+
+  it('PATCH reading-record sets read_format', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ read_format: 'ebook' })
+      .expect(200);
+
+    expect(res.body.reading.read_format).toBe('ebook');
+  });
+
+  it('PATCH reading-record clears read_format with null', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ read_format: 'fisico' })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ read_format: null })
+      .expect(200);
+
+    expect(res.body.reading.read_format).toBeNull();
+  });
+
+  it('POST /v1/books creates reading record without read_format', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Format Default Test',
+        authors: 'Author',
+        data_source: 'manual',
+      })
+      .expect(201);
+
+    const list = await request(app.getHttpServer())
+      .get('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const item = list.body.find(
+      (b: { id: string }) => b.id === res.body.book.id,
+    );
+    expect(item.read_format).toBeNull();
+  });
 });
