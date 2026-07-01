@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
+  "started_at": null,
+  "last_completed": null,
+  "current_ticket": null,
+  "tickets": {}
+}

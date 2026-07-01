@@ -1,0 +1,99 @@
+# KAN implementation queue — Reading Analytics Platform
+# Processed sequentially by the kan-pipeline skill (.cursor/skills/kan-pipeline).
+# Edit this file to reorder, skip, or add tickets. State lives in kan-pipeline-state.json.
+
+repo:
+  owner: CeliaMerino
+  name: AI4Devs-finalproject
+  full_name: CeliaMerino/AI4Devs-finalproject
+  git_remote: origin # fork — NEVER use upstream (LIDR-academy/AI4Devs-finalproject) for PRs or pushes
+  default_branch: main
+
+pull_request:
+  base: main
+  # All gh pr commands MUST pass: --repo CeliaMerino/AI4Devs-finalproject
+  target: CeliaMerino/AI4Devs-finalproject:main
+
+merge:
+  auto_merge: false # human reviews and merges on GitHub
+  human_gate: true # pipeline pauses after PR; resume with /kan-pipeline continue
+
+branch_pattern: "feature/{ticket}-{slug}" # slug derived from Jira summary
+
+change_name_pattern: "kan-{number}-{slug}" # OpenSpec change directory name
+
+phases:
+  - id: phase-1-ui-foundation
+    name: "Phase 1 — UI foundations (unblocks all visual work)"
+    tickets:
+      - id: KAN-18
+        summary: "Design tokens + base components"
+      - id: KAN-19
+        summary: "Unified sidebar"
+
+  - id: phase-2-book-tracker-data
+    name: "Phase 2 — Book Tracker data integrity (backend can run parallel to Phase 1)"
+    tickets:
+      - id: KAN-35
+        summary: "Audience column + API (blocks form and charts)"
+      - id: KAN-26
+        summary: "Manual add/edit — entry point"
+      - id: KAN-27
+        summary: "Manual add/edit — part 2"
+        depends_on: [KAN-26]
+      - id: KAN-28
+        summary: "Manual add/edit — part 3"
+        depends_on: [KAN-27]
+      - id: KAN-29
+        summary: "Manual add/edit — part 4"
+        depends_on: [KAN-28]
+      - id: KAN-30
+        summary: "Selectable format"
+
+  - id: phase-3-page-restyle
+    name: "Phase 3 — Page-by-page restyle (form + new columns in place)"
+    note: "KAN-20 is the restyle epic; implement child tickets in this order."
+    tickets:
+      - id: KAN-22
+        summary: "Book Tracker page restyle"
+      - id: KAN-21
+        summary: "Home page restyle"
+      - id: KAN-23
+        summary: "Reading Stats page restyle"
+      - id: KAN-24
+        summary: "Lists page restyle"
+      - id: KAN-25
+        summary: "Goals page restyle"
+
+  - id: phase-4-reading-stats-features
+    name: "Phase 4 — Reading Stats functionality"
+    tickets:
+      - id: KAN-38
+        summary: "Year filter (enables following work)"
+      - id: KAN-31
+        summary: "Star averages — entry"
+      - id: KAN-32
+        summary: "Star averages — part 2"
+        depends_on: [KAN-31]
+      - id: KAN-33
+        summary: "Star averages — part 3"
+        depends_on: [KAN-32]
+      - id: KAN-34
+        summary: "Star averages — part 4"
+        depends_on: [KAN-33]
+      - id: KAN-40
+        summary: "Chart set — container"
+      - id: KAN-41
+        summary: "Pie charts"
+        depends_on: [KAN-40]
+      - id: KAN-42
+        summary: "Bar charts"
+        depends_on: [KAN-40]
+      - id: KAN-39
+        summary: "Cover gallery (uses period filter)"
+
+  - id: phase-5-insights
+    name: "Phase 5 — Resume"
+    tickets:
+      - id: KAN-16
+        summary: "Automatic insights (requires stable stats data)"

@@ -32,6 +32,7 @@ ai-specs/
 ├── README.md
 ├── specboot-instructions.md   # Setup reference (Specboot template)
 ├── agents/                    # Planning-only role prompts
+├── queues/                    # KAN pipeline queue + state (kan-pipeline skill)
 └── skills/                    # Canonical skills (symlink → .cursor/skills/)
 ```
 
@@ -53,6 +54,7 @@ ai-specs/
 | `sync-agent-symlinks` | Sync `ai-specs/skills` → `.cursor/skills` |
 | `using-git-worktrees` | Isolated branch before large changes |
 | `commit` | Focused commits and PRs |
+| `kan-pipeline` | Full ticket lifecycle: enrich → propose → apply → PR/merge → archive (see `ai-specs/queues/`) |
 | `code-auditing` | Quality / security audit |
 | `adversarial-review` | Pre-archive review |
 
