@@ -76,12 +76,12 @@
       "error": null
     },
     "KAN-30": {
-      "status": "in_progress",
+      "status": "awaiting_merge",
       "failed_step": null,
       "change_name": "kan-30-selectable-read-format",
       "branch": "feature/KAN-30-selectable-read-format",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/25",
+      "pr_number": 25,
       "archived_at": null,
       "error": null
     }
