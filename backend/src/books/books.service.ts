@@ -16,6 +16,7 @@ import {
   BookListItemDto,
 } from './dto/book-response.dto';
 import { CreateBookDto } from './dto/create-book.dto';
+import { PatchBookDto } from './dto/patch-book.dto';
 import { PatchReadingRecordDto } from './dto/patch-reading-record.dto';
 import {
   PatchSideEffectsMetaDto,
@@ -211,6 +212,7 @@ export class BooksService {
       dataSource: dto.data_source,
       externalProviderId: dto.external_provider_id ?? null,
       notes: dto.notes ?? null,
+      audience: dto.audience ?? null,
     });
 
     const saved = await this.booksRepo.save(book);
@@ -317,6 +319,21 @@ export class BooksService {
     return book;
   }
 
+  async update(
+    userId: string,
+    bookId: string,
+    dto: PatchBookDto,
+  ): Promise<BookDto> {
+    if (dto.audience === undefined) {
+      throw new BadRequestException('At least one field is required');
+    }
+
+    const book = await this.findOneForUser(userId, bookId);
+    book.audience = dto.audience ?? null;
+    const saved = await this.booksRepo.save(book);
+    return this.toBookDto(saved);
+  }
+
   toBookDto(book: Book): BookDto {
     return {
       id: book.id,
@@ -333,6 +350,7 @@ export class BooksService {
       data_source: book.dataSource,
       external_provider_id: book.externalProviderId,
       notes: book.notes,
+      audience: book.audience,
       created_at: book.createdAt.toISOString(),
       updated_at: book.updatedAt.toISOString(),
     };

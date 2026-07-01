@@ -17,6 +17,8 @@ export type DataSourceType =
   | 'goodreads'
   | 'manual';
 
+export type AudienceType = 'young_adult' | 'new_adult' | 'adult';
+
 @Entity('books')
 export class Book {
   @PrimaryGeneratedColumn('uuid')
@@ -64,6 +66,9 @@ export class Book {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  audience: AudienceType | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

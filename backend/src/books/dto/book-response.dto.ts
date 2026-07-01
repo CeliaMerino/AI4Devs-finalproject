@@ -1,4 +1,4 @@
-import { DataSourceType } from '../entities/book.entity';
+import { DataSourceType, AudienceType } from '../entities/book.entity';
 import { ReadingStatus } from '../entities/reading-record.entity';
 
 export class BookDto {
@@ -16,6 +16,7 @@ export class BookDto {
   data_source: DataSourceType;
   external_provider_id: string | null;
   notes: string | null;
+  audience: AudienceType | null;
   created_at: string;
   updated_at: string;
 }

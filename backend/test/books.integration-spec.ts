@@ -200,4 +200,47 @@ describe('Books API (integration)', () => {
     );
     expect(entry?.completed).toBe(true);
   });
+
+  it('POST /v1/books accepts optional audience', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Audience Test Book',
+        authors: 'Test Author',
+        data_source: 'manual',
+        audience: 'young_adult',
+      })
+      .expect(201);
+
+    expect(res.body.book.audience).toBe('young_adult');
+  });
+
+  it('PATCH /v1/books/{bookId} updates audience', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ audience: 'adult' })
+      .expect(200);
+
+    expect(res.body.audience).toBe('adult');
+
+    const list = await request(app.getHttpServer())
+      .get('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const item = list.body.find((b: { id: string }) => b.id === bookId);
+    expect(item.audience).toBe('adult');
+  });
+
+  it('PATCH /v1/books/{bookId} clears audience with null', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ audience: null })
+      .expect(200);
+
+    expect(res.body.audience).toBeNull();
+  });
 });

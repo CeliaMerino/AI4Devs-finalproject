@@ -4,6 +4,8 @@ export type DataSource =
   | 'goodreads'
   | 'manual';
 
+export type AudienceType = 'young_adult' | 'new_adult' | 'adult';
+
 export type ReadingStatus = 'pendiente' | 'leyendo' | 'leido' | 'dnf';
 
 export type ReadFormat = 'fisico' | 'ebook' | 'audio';
@@ -51,6 +53,7 @@ export interface Book {
   data_source: DataSource;
   external_provider_id: string | null;
   notes: string | null;
+  audience: AudienceType | null;
   created_at: string;
   updated_at: string;
   reading_status?: ReadingStatus;
@@ -182,6 +185,11 @@ export interface CreateBookPayload {
   data_source: DataSource;
   external_provider_id?: string | null;
   notes?: string | null;
+  audience?: AudienceType | null;
+}
+
+export interface PatchBookPayload {
+  audience?: AudienceType | null;
 }
 
 export interface BookCreatedResponse {
