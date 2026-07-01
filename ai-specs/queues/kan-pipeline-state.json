@@ -46,12 +46,12 @@
       "error": null
     },
     "KAN-27": {
-      "status": "in_progress",
+      "status": "awaiting_merge",
       "failed_step": null,
       "change_name": "kan-27-book-patch-api",
       "branch": "feature/KAN-27-book-patch-api",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/22",
+      "pr_number": 22,
       "archived_at": null,
       "error": null
     }
