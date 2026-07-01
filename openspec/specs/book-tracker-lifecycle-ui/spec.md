@@ -39,6 +39,11 @@ The UI SHALL open a completion modal when a PATCH response includes `meta.openCo
 - **WHEN** the user confirms the modal with format and rating
 - **THEN** the client PATCHes `finished_on`, `read_format`, and `rating` and refreshes the row
 
+#### Scenario: Format optional in modal (KAN-30)
+
+- **WHEN** the user saves the completion modal without selecting a format
+- **THEN** `read_format` stays null until set inline later
+
 ### Requirement: Inline star rating for read books
 
 The UI SHALL allow assigning 1–5 stars inline in the table for books in status `leido` without opening the modal.
