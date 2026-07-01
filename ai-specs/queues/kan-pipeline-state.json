@@ -66,12 +66,12 @@
       "error": null
     },
     "KAN-29": {
-      "status": "in_progress",
+      "status": "awaiting_merge",
       "failed_step": null,
       "change_name": "kan-29-manual-create-from-search",
       "branch": "feature/KAN-29-manual-create-from-search",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/24",
+      "pr_number": 24,
       "archived_at": null,
       "error": null
     }
