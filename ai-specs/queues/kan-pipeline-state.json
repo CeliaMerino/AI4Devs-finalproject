@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-28",
-  "current_ticket": null,
+  "current_ticket": "KAN-29",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -63,6 +63,16 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/23",
       "pr_number": 23,
       "archived_at": "2026-07-01T18:25:00Z",
+      "error": null
+    },
+    "KAN-29": {
+      "status": "in_progress",
+      "failed_step": null,
+      "change_name": "kan-29-manual-create-from-search",
+      "branch": "feature/KAN-29-manual-create-from-search",
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
       "error": null
     }
   }

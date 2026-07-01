@@ -16,6 +16,7 @@ import './BookTrackerPage.css';
 
 export function BookTrackerPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [manualCreateOpen, setManualCreateOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [completionBookId, setCompletionBookId] = useState<string | null>(
     null,
@@ -145,13 +146,20 @@ export function BookTrackerPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
+        onCreateManual={() => {
+          setModalOpen(false);
+          setManualCreateOpen(true);
+        }}
       />
 
       <BookFormModal
-        open={editingBook !== null}
-        mode="edit"
-        book={editingBook}
-        onClose={() => setEditingBook(null)}
+        open={editingBook !== null || manualCreateOpen}
+        mode={manualCreateOpen ? 'create' : 'edit'}
+        book={manualCreateOpen ? null : editingBook}
+        onClose={() => {
+          setEditingBook(null);
+          setManualCreateOpen(false);
+        }}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
         onOpenCompletionModal={handleOpenCompletion}
       />
