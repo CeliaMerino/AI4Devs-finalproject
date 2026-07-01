@@ -17,9 +17,10 @@ interface AddBookModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onCreateManual?: () => void;
 }
 
-export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
+export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBookModalProps) {
   const [step, setStep] = useState<ModalStep>('search');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -161,6 +162,12 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
     }
   }, [selectedEdition, selectedCover, covers.length, audience, onSaved, onClose]);
 
+  const showManualCreate =
+    step === 'search' &&
+    debouncedQuery.length >= 2 &&
+    !searchLoading &&
+    results.length === 0;
+
   if (!open) return null;
 
   return (
@@ -196,8 +203,19 @@ export function AddBookModal({ open, onClose, onSaved }: AddBookModalProps) {
             {searchLoading && (
               <p className="modal-hint">Buscando en Open Library… (puede tardar unos segundos)</p>
             )}
-            {!searchLoading && debouncedQuery.length >= 2 && results.length === 0 && !error && (
-              <p className="modal-hint">No se encontraron libros.</p>
+            {showManualCreate && (
+              <div className="manual-create-fallback">
+                <p className="modal-hint">No se encontraron libros.</p>
+                {onCreateManual ? (
+                  <button
+                    type="button"
+                    className="btn-manual-create"
+                    onClick={onCreateManual}
+                  >
+                    Crear manualmente
+                  </button>
+                ) : null}
+              </div>
             )}
 
             <ul className="edition-list">
