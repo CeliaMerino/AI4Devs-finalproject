@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { listBooks, patchReadingRecord } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
-import type { ReadingRecordResource } from '../api/types';
+import type { Book, ReadingRecordResource } from '../api/types';
 import { AddBookModal } from '../components/AddBookModal';
+import { BookFormModal } from '../components/BookFormModal';
 import { BookTrackerRow } from '../components/BookTrackerRow';
 import { CompletionModal } from '../components/CompletionModal';
 import {
@@ -15,6 +16,7 @@ import './BookTrackerPage.css';
 
 export function BookTrackerPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [completionBookId, setCompletionBookId] = useState<string | null>(
     null,
   );
@@ -122,6 +124,7 @@ export function BookTrackerPage() {
             <th>Inicio</th>
             <th>Fin</th>
             <th>Puntuación</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -132,6 +135,7 @@ export function BookTrackerPage() {
               onOpenCompletionModal={handleOpenCompletion}
               onUpdated={invalidateAfterReadingUpdate}
               onBookUpdated={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
+              onEditBook={setEditingBook}
             />
           ))}
         </tbody>
@@ -141,6 +145,13 @@ export function BookTrackerPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ['books'] })}
+      />
+
+      <BookFormModal
+        open={editingBook !== null}
+        mode="edit"
+        book={editingBook}
+        onClose={() => setEditingBook(null)}
       />
 
       <CompletionModal
