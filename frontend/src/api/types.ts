@@ -189,7 +189,15 @@ export interface CreateBookPayload {
 }
 
 export interface PatchBookPayload {
+  title?: string;
+  authors?: string;
+  cover_image_url?: string | null;
+  page_count?: number | null;
+  genre?: string | null;
+  series_name?: string | null;
+  publication_year?: number | null;
   audience?: AudienceType | null;
+  notes?: string | null;
 }
 
 export interface BookCreatedResponse {

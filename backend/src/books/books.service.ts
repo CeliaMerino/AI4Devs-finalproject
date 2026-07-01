@@ -324,14 +324,56 @@ export class BooksService {
     bookId: string,
     dto: PatchBookDto,
   ): Promise<BookDto> {
-    if (dto.audience === undefined) {
-      throw new BadRequestException('At least one field is required');
-    }
+    this.assertPatchBookHasFields(dto);
 
     const book = await this.findOneForUser(userId, bookId);
-    book.audience = dto.audience ?? null;
+
+    if (dto.title !== undefined) {
+      book.title = dto.title;
+    }
+    if (dto.authors !== undefined) {
+      book.authors = dto.authors;
+    }
+    if (dto.cover_image_url !== undefined) {
+      book.coverImageUrl = dto.cover_image_url;
+    }
+    if (dto.page_count !== undefined) {
+      book.pageCount = dto.page_count;
+    }
+    if (dto.genre !== undefined) {
+      book.genre = dto.genre;
+    }
+    if (dto.series_name !== undefined) {
+      book.seriesName = dto.series_name;
+    }
+    if (dto.publication_year !== undefined) {
+      book.publicationYear = dto.publication_year;
+    }
+    if (dto.audience !== undefined) {
+      book.audience = dto.audience;
+    }
+    if (dto.notes !== undefined) {
+      book.notes = dto.notes;
+    }
+
     const saved = await this.booksRepo.save(book);
     return this.toBookDto(saved);
+  }
+
+  private assertPatchBookHasFields(dto: PatchBookDto): void {
+    const hasField =
+      dto.title !== undefined ||
+      dto.authors !== undefined ||
+      dto.cover_image_url !== undefined ||
+      dto.page_count !== undefined ||
+      dto.genre !== undefined ||
+      dto.series_name !== undefined ||
+      dto.publication_year !== undefined ||
+      dto.audience !== undefined ||
+      dto.notes !== undefined;
+    if (!hasField) {
+      throw new BadRequestException('At least one field is required');
+    }
   }
 
   toBookDto(book: Book): BookDto {
