@@ -2,17 +2,17 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": null,
-  "current_ticket": "KAN-18",
+  "last_completed": "KAN-18",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-18-design-system",
       "branch": "feature/KAN-18-design-system",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/18",
       "pr_number": 18,
-      "archived_at": null,
+      "archived_at": "2026-07-01T17:05:00Z",
       "error": null
     }
   }
