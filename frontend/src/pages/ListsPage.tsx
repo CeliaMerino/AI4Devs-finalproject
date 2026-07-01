@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getMonthlyTbr, removeTbrEntry } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
 import { AddToTbrModal } from '../components/AddToTbrModal';
@@ -69,11 +68,6 @@ export function ListsPage() {
   return (
     <div className="lists-page">
       <header className="lists-header">
-        <nav className="lists-nav">
-          <Link to="/">Home</Link>
-          <Link to="/book-tracker">Book Tracker</Link>
-          <span className="lists-nav__current">Lists</span>
-        </nav>
         <h1>{title}</h1>
         <div className="lists-month-nav">
           <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { listBooks, patchReadingRecord } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
 import type { ReadingRecordResource } from '../api/types';
@@ -88,11 +87,6 @@ export function BookTrackerPage() {
   return (
     <div className="book-tracker">
       <header className="tracker-header">
-        <nav className="tracker-nav">
-          <Link to="/">Home</Link>
-          <span className="tracker-nav__current">Book Tracker</span>
-          <Link to="/lists">Lists</Link>
-        </nav>
         <h1>Book Tracker</h1>
         <button
           type="button"
