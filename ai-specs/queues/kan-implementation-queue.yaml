@@ -4,13 +4,19 @@
 
 repo:
   owner: CeliaMerino
-  name: AI4devs-finalproject
+  name: AI4Devs-finalproject
+  full_name: CeliaMerino/AI4Devs-finalproject
+  git_remote: origin # fork — NEVER use upstream (LIDR-academy/AI4Devs-finalproject) for PRs or pushes
   default_branch: main
 
+pull_request:
+  base: main
+  # All gh pr commands MUST pass: --repo CeliaMerino/AI4Devs-finalproject
+  target: CeliaMerino/AI4Devs-finalproject:main
+
 merge:
-  method: squash # squash | merge | rebase
-  wait_for_checks: true
-  auto_merge: true # gh pr merge --auto when checks pass
+  auto_merge: false # human reviews and merges on GitHub
+  human_gate: true # pipeline pauses after PR; resume with /kan-pipeline continue
 
 branch_pattern: "feature/{ticket}-{slug}" # slug derived from Jira summary
 

@@ -2,10 +2,11 @@
 name: kan-pipeline
 description: >-
   Orchestrate the full Jira ticket lifecycle for KAN-* tickets: enrich-us →
-  openspec-propose → openspec-apply-change → commit/PR/merge → openspec-archive-change,
-  then reset to main for the next ticket. Use with the queue in ai-specs/queues/kan-implementation-queue.yaml.
+  openspec-propose → openspec-apply-change → commit/PR (fork only) → human merge gate →
+  openspec-archive-change, then reset to main for the next ticket.
+  Use with the queue in ai-specs/queues/kan-implementation-queue.yaml.
 author: Reading Analytics Platform
-version: 1.0.0
+version: 1.1.0
 ---
 
 # kan-pipeline Skill
@@ -14,18 +15,45 @@ End-to-end **multi-step agent workflow** for implementing `KAN-*` Jira tickets i
 
 **Announce at start:** "I'm using the kan-pipeline skill."
 
+## Fork and remote policy (mandatory)
+
+This project is developed on a **personal fork**, not the upstream classroom repo.
+
+| Remote | Repository | Use |
+|--------|------------|-----|
+| `origin` | `CeliaMerino/AI4Devs-finalproject` | **All pushes and PRs** |
+| `upstream` | `LIDR-academy/AI4Devs-finalproject` | Read-only sync when explicitly requested — **never PR here** |
+
+**Every `gh` command** that targets the repo MUST include:
+
+```bash
+--repo CeliaMerino/AI4Devs-finalproject
+```
+
+Examples:
+
+```bash
+git push origin HEAD
+gh pr create --repo CeliaMerino/AI4Devs-finalproject --base main --head feature/KAN-18-design-system ...
+gh pr view 42 --repo CeliaMerino/AI4Devs-finalproject
+```
+
+Read `repo`, `pull_request`, and `merge` from **`ai-specs/queues/kan-implementation-queue.yaml`**.
+
 ## Input
 
 `$ARGUMENTS` may be:
 
 | Argument | Behavior |
 |----------|----------|
-| *(empty)* | Resume or start the queue from the first pending ticket |
+| *(empty)* | Resume queue from first pending ticket (or human gate if awaiting merge) |
 | `status` | Show queue progress without running steps |
-| `next` | Run exactly one ticket, then stop |
-| `KAN-XX` | Run pipeline for that ticket only (must exist in queue) |
-| `from KAN-XX` | Start queue at that ticket (skip earlier completed ones) |
-| `dry-run` | Print planned steps for the next ticket; no git/Jira/OpenSpec writes |
+| `next` | Run steps 0–5 for one ticket, open PR, **stop at human gate** |
+| `continue` | After user merged PR: verify merge → archive → reset → optionally next ticket |
+| `continue KAN-XX` | Continue a specific ticket in `awaiting_merge` state |
+| `KAN-XX` | Run full cycle for that ticket only (still stops at human gate) |
+| `from KAN-XX` | Start queue at that ticket |
+| `dry-run` | Print planned steps; no git/Jira/OpenSpec writes |
 
 ## Queue source
 
@@ -37,39 +65,40 @@ Track progress in **`ai-specs/queues/kan-pipeline-state.json`**:
 {
   "tickets": {
     "KAN-18": {
-      "status": "done|in_progress|failed|skipped|pending",
-      "change_name": "kan-18-design-tokens",
-      "branch": "feature/KAN-18-design-tokens",
-      "pr_url": "https://github.com/...",
-      "archived_at": "2026-07-01T12:00:00Z",
+      "status": "pending|in_progress|awaiting_merge|done|failed|skipped",
+      "failed_step": null,
+      "change_name": "kan-18-design-system",
+      "branch": "feature/KAN-18-design-system",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/N",
+      "pr_number": 42,
+      "archived_at": null,
       "error": null
     }
   }
 }
 ```
 
-Update state after **each step** so a interrupted run can resume safely.
+Update state after **each step** so an interrupted run can resume safely.
 
 ## Per-ticket pipeline (strict order)
 
-Complete **all** steps for one ticket before starting the next.
+Complete **all** steps for one ticket before starting the next — except the **human merge gate** between steps 5 and 6.
 
 ```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐    ┌────────┐    ┌─────────┐    ┌──────────┐
-│ 0 Preflight │ →  │ 1 enrich-us  │ →  │ 2 opsx-propose  │ →  │ 3 apply│ →  │ 4 commit│ →  │ 5 archive│
-└─────────────┘    └──────────────┘    └─────────────────┘    └────────┘    └─────────┘    └──────────┘
-                                                                                  │ PR + merge
-                                                                                  ▼
-                                                                           6 reset main + pull
+┌─────────┐   ┌──────────┐   ┌─────────┐   ┌───────┐   ┌──────────┐   ┌─────────────┐   ┌─────────┐   ┌───────┐   ┌───────┐
+│Preflight│ → │ enrich-us│ → │ propose │ → │ apply │ → │ commit+PR│ → │ HUMAN GATE  │ → │ archive │ → │ reset │ → │ next  │
+└─────────┘   └──────────┘   └─────────┘   └───────┘   └──────────┘   │ you merge   │   └─────────┘   └───────┘   └───────┘
+                                                                       │ /continue   │
+                                                                       └─────────────┘
 ```
 
 ### Step 0 — Preflight
 
-1. Confirm working tree is clean or stash; use `/kan-pipeline` resume from a failed step.
-2. `git checkout main && git pull origin main`
-3. Verify `openspec` CLI works: `openspec list --json`
-4. Verify Atlassian MCP (`user-atlassian`) is available for Jira fetch.
-5. Verify `gh` is authenticated for `CeliaMerino/AI4devs-finalproject`.
+1. Confirm working tree is clean or stash; resume from `failed_step` when retrying.
+2. `git checkout main && git pull origin main` — **always `origin`**, never `upstream`.
+3. Verify `openspec list --json` works.
+4. Verify Atlassian MCP (`user-atlassian`) for Jira.
+5. Verify `gh auth status` and `gh repo view CeliaMerino/AI4Devs-finalproject`.
 6. Mark ticket `in_progress` in state file.
 
 ### Step 1 — enrich-us
@@ -77,96 +106,126 @@ Complete **all** steps for one ticket before starting the next.
 **Skill:** `enrich-us` (Jira mode)
 
 1. Fetch `KAN-XX` via Atlassian MCP (`jira_get_issue`).
-2. Produce `## Original` and `## Enhanced` sections per enrich-us rules.
-3. Use project context: `PRD.md`, `readme.md`, `documents/`, `docs/api-spec.yml`, `docs/data-model.md`.
-4. Save enhanced story to `openspec/changes/.drafts/KAN-XX-enhanced.md` (create `.drafts` if needed).
-5. Optionally write back to Jira (append enhanced content; move `To refine` → `Pending refinement validation`).
+2. Produce `## Original` and `## Enhanced` per enrich-us rules.
+3. Save to `openspec/changes/.drafts/KAN-XX-enhanced.md`.
+4. Optional Jira write-back.
 
-**Pause if:** Jira fetch fails, ticket is empty, or enhanced story lacks enough detail for OpenSpec.
+**Pause if:** Jira fetch fails or story lacks detail for OpenSpec.
 
 ### Step 2 — openspec-propose
 
 **Skill:** `openspec-propose`
 
-1. Derive **change name** from queue config `change_name_pattern` (default `kan-{number}-{slug}`):
-   - Slug from Jira summary: lowercase, hyphenated, max 40 chars, English.
-   - Example: `KAN-18` + "Design tokens + base components" → `kan-18-design-tokens`.
-2. Create branch **before** artifacts (see Branch policy below):
+1. Derive change name from `change_name_pattern` (slug from Jira summary, English, kebab-case).
+2. Create branch from updated `main`:
    ```bash
-   git checkout -b feature/KAN-18-design-tokens
+   git checkout -b feature/KAN-XX-<slug>
    ```
-3. Run full openspec-propose workflow using the **enhanced story** as input context.
-4. Record `change_name` in state file.
+3. Run full openspec-propose using the enhanced story.
+4. Record `change_name` and `branch` in state.
 
-**Pause if:** A change with that name already exists — ask whether to continue, rename, or abort.
+**Pause if:** Change name collision — ask continue / rename / abort.
 
 ### Step 3 — openspec-apply-change
 
 **Skill:** `openspec-apply-change`
 
-1. Read apply instructions: `openspec instructions apply --change "<name>" --json`
-2. Read all `contextFiles`.
-3. Implement **every** pending task; mark `- [x]` immediately after each.
-4. Run targeted verification when tasks specify tests:
-   - Backend: `npm test` / `npm run test` in `backend/`
-   - Frontend: `npm test` in `frontend/`
-   - Lint only if fast and relevant
-5. Do **not** commit yet — commit skill handles git in step 4.
+1. `openspec instructions apply --change "<name>" --json`
+2. Read all `contextFiles`; implement every pending task; mark `- [x]` after each.
+3. Run verification when tasks require tests.
+4. Do **not** commit yet.
 
-**Long-running apply:** For tickets with many tasks, you may delegate to a `generalPurpose` subagent with the apply skill loaded, passing full context (change name, enhanced story, queue ticket id). The orchestrator must verify all tasks are checked before proceeding.
+**Pause if:** Blocked artifacts, failing tests, or ambiguous requirements.
 
-**Pause if:** Blocked artifacts, failing tests that cannot be fixed, or ambiguous requirements.
+### Step 4 — commit + open PR (no merge)
 
-### Step 4 — commit, PR, merge
+**Skill:** `commit` (PR only — **do not merge**)
 
-**Skill:** `commit` (extended with merge)
-
-1. Invoke commit workflow scoped to the ticket: `/commit KAN-XX`
-2. Branch should already exist from step 2; commit skill stages all relevant changes, pushes, opens PR.
-3. **PR target:** `CeliaMerino/AI4devs-finalproject:main`
-4. **PR title:** `[KAN-XX] <short summary>`
-5. **PR body** must include:
+1. Stage and commit all ticket-scoped changes on the feature branch.
+2. Push to **`origin`**:
+   ```bash
+   git push -u origin HEAD
+   ```
+3. Create PR **on the fork only**:
+   ```bash
+   gh pr create \
+     --repo CeliaMerino/AI4Devs-finalproject \
+     --base main \
+     --head <branch> \
+     --title "[KAN-XX] <short summary>" \
+     --body "<see PR body template below>"
+   ```
+4. **PR body** must include:
    - Link to Jira ticket
-   - Summary of OpenSpec change and key files touched
-   - Test plan checklist (from tasks.md / manual test notes)
-   - OpenSpec change path: `openspec/changes/<change-name>/`
-6. Wait for CI (if `merge.wait_for_checks`):
-   ```bash
-   gh pr checks --watch
-   ```
-7. Merge using queue config method (default **squash**):
-   ```bash
-   gh pr merge --squash --delete-branch
-   ```
-   Use `--merge` or `--rebase` when queue config says so.
-8. Record `pr_url` and merge commit in state file.
+   - OpenSpec change path
+   - Summary of changes
+   - Test plan checklist
+5. Record `pr_url`, `pr_number` in state.
+6. Set ticket status to **`awaiting_merge`**.
 
-**Pause if:** CI fails, merge conflicts, branch protection blocks merge, or review required.
+**Do NOT run** `gh pr merge`, `gh pr merge --auto`, or `--auto` merge. The user merges manually on GitHub.
 
-### Step 5 — openspec-archive-change
+### Step 5 — Human merge gate (mandatory stop)
+
+**Stop the pipeline** and report clearly:
+
+```markdown
+## KAN-XX — ready for your review
+
+**PR:** <pr_url>
+**Branch:** feature/KAN-XX-<slug>
+
+Please review and merge the PR on GitHub when satisfied.
+Then run: **`/kan-pipeline continue`** (or `/kan-pipeline continue KAN-XX`)
+```
+
+Do not proceed to archive or the next ticket until the user explicitly continues.
+
+### Step 6 — continue (after user merged)
+
+Triggered by `/kan-pipeline continue` or `/kan-pipeline continue KAN-XX`.
+
+1. Verify PR is **merged** on the fork:
+   ```bash
+   gh pr view <number> --repo CeliaMerino/AI4Devs-finalproject --json state,mergedAt
+   ```
+   If still `OPEN`, stop and remind the user to merge first.
+2. `git checkout main && git pull origin main`
+3. Confirm merged commits are on local `main`.
+4. Proceed to Step 7 (archive).
+
+**Pause if:** PR not merged, or local `main` does not include the merge.
+
+### Step 7 — openspec-archive-change
 
 **Skill:** `openspec-archive-change`
 
-1. Run delta spec sync assessment (sync when delta specs exist — default **sync now** unless user configured otherwise in queue).
-2. Archive: `mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>/`
-3. Mark ticket `done` in state; set `archived_at`.
+1. Delta spec sync assessment (sync when delta specs exist — default **sync now**).
+2. Archive change to `openspec/changes/archive/YYYY-MM-DD-<name>/`.
+3. Mark ticket `done`; set `archived_at`.
 
-### Step 6 — Reset for next ticket
+### Step 8 — Reset for next ticket
 
 ```bash
 git checkout main
 git pull origin main
 ```
 
-Delete local feature branch if it still exists after merge. Proceed to next pending ticket in queue order.
+Delete local feature branch if it still exists:
+
+```bash
+git branch -d feature/KAN-XX-<slug>  # or -D if needed after merge
+```
+
+If running full queue (`/kan-pipeline` without `next`), proceed to the next pending ticket from step 0. If `next` mode, stop here.
 
 ## Branch policy
 
 | When | Branch |
 |------|--------|
-| Step 2 start | Create `feature/KAN-XX-<slug>` from updated `main` |
+| Step 2 start | `feature/KAN-XX-<slug>` from `origin/main` |
 | Steps 3–4 | Stay on feature branch |
-| Step 6 | Return to `main` |
+| Step 6+ | `main` on fork |
 
 Never implement two queue tickets on the same branch.
 
@@ -174,22 +233,24 @@ Never implement two queue tickets on the same branch.
 
 | Mode | Command | Behavior |
 |------|---------|----------|
-| Full queue | `/kan-pipeline` | Run tickets until blocked or queue empty |
-| One ticket | `/kan-pipeline next` | One ticket then stop |
-| Single ticket | `/kan-pipeline KAN-35` | That ticket only |
-| Resume | `/kan-pipeline` | Skip `done`; retry `failed` from failed step |
+| Full queue | `/kan-pipeline` | Run until human gate or queue empty; after each `continue`, may auto-start next ticket |
+| One ticket | `/kan-pipeline next` | Steps 0–5 then stop at human gate |
+| After merge | `/kan-pipeline continue` | Steps 6–8 for ticket in `awaiting_merge` |
+| Single ticket | `/kan-pipeline KAN-35` | Full cycle for one ticket (still stops at gate) |
+| Resume failed | `/kan-pipeline` | Retry from `failed_step` |
 | Status | `/kan-pipeline status` | Table of phases and ticket states |
 
 ## Error handling
 
-On any step failure:
+On failure before the human gate:
 
-1. Mark ticket `failed` with `error` message and `failed_step` in state.
-2. **Stop the queue** — do not auto-advance to the next ticket.
-3. Report: ticket, step, error, suggested fix, resume command.
-4. Resume with `/kan-pipeline` (retries from `failed_step`) or `/kan-pipeline from KAN-XX`.
+1. Mark ticket `failed` with `error` and `failed_step`.
+2. **Stop the queue.**
+3. Resume with `/kan-pipeline` from `failed_step`.
 
-## Output format (per ticket)
+Tickets in `awaiting_merge` are not failures — they wait for `/kan-pipeline continue`.
+
+## Output format (after continue completes)
 
 ```markdown
 ## KAN-XX — <summary> ✓
@@ -199,40 +260,35 @@ On any step failure:
 | enrich-us | ✓ | openspec/changes/.drafts/KAN-XX-enhanced.md |
 | propose | ✓ | change: kan-xx-slug |
 | apply | ✓ | 12/12 tasks |
-| commit + PR | ✓ | https://github.com/.../pull/N |
-| merge | ✓ | squash → main |
+| commit + PR | ✓ | https://github.com/CeliaMerino/AI4Devs-finalproject/pull/N |
+| human merge | ✓ | merged by user |
 | archive | ✓ | openspec/changes/archive/2026-07-01-kan-xx-slug/ |
 
-**Next:** KAN-YY — <summary>
+**Next:** KAN-YY — run `/kan-pipeline next` or `/kan-pipeline continue` if queue mode
 ```
 
 ## Guardrails
 
-- **One ticket at a time** — full pipeline before the next queue entry.
-- **English** for commits, PRs, OpenSpec artifacts, and code (per AGENTS.md).
+- **Fork only:** never `gh pr create` without `--repo CeliaMerino/AI4Devs-finalproject`; never target `upstream` / LIDR-academy.
+- **No auto-merge:** never run `gh pr merge` unless the user explicitly asks outside the pipeline.
+- **Human gate:** always stop after PR creation; require `/kan-pipeline continue` before archive.
+- **One ticket at a time** through implementation; next ticket only after archive + reset.
+- **English** for commits, PRs, OpenSpec artifacts, and code.
 - **No force-push** to `main`.
-- **No skip** of enrich or propose unless user explicitly says `skip-enrich` / `skip-propose`.
-- **Do not merge** with failing required checks unless user confirms.
-- **Sync delta specs** before archive when they exist (openspec-archive-change default).
-- Respect phase dependencies in the queue YAML (`depends_on` is informational; order is already linear).
+- **Sync delta specs** before archive when they exist.
 
 ## Related skills & commands
 
 | Step | Skill / command |
 |------|-----------------|
-| 1 | `enrich-us`, `/enrich-us KAN-XX` |
+| 1 | `enrich-us` |
 | 2 | `openspec-propose`, `/opsx-propose` |
 | 3 | `openspec-apply-change`, `/opsx-apply` |
-| 4 | `commit`, `/commit KAN-XX` |
-| 5 | `openspec-archive-change`, `/opsx-archive` |
-| Isolation (optional) | `using-git-worktrees` for parallel human work — pipeline uses feature branches on main checkout |
+| 4 | `commit` (PR only, fork repo flag) |
+| 5 | *(user action on GitHub)* |
+| 6–7 | `openspec-archive-change`, `/opsx-archive` |
+| Resume | `/kan-pipeline continue` |
 
-## Continuous processing (optional)
+## Continuous processing
 
-To run the queue with pauses between tickets, combine with the **loop** skill:
-
-```
-/loop 30m /kan-pipeline next
-```
-
-Use dynamic loop mode when merge/CI duration varies.
+Do **not** use `/loop` to auto-merge. Loop is only useful **after** the user merges and runs `continue`, or for status checks while waiting.
