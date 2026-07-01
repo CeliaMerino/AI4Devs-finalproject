@@ -30,7 +30,7 @@ The application SHALL provide a `BookFormModal` dialog reusable for create and e
 
 - **WHEN** the modal opens in edit mode
 - **THEN** the dialog uses focus trap and closes on Escape or Cancel
-- **AND** Save is present but disabled until the full form is implemented (KAN-28)
+- **AND** Save submits the form when validation passes
 
 #### Scenario: Modal closes without side effects
 

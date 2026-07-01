@@ -2,8 +2,8 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": "KAN-27",
-  "current_ticket": "KAN-28",
+  "last_completed": "KAN-28",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -56,13 +56,13 @@
       "error": null
     },
     "KAN-28": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-28-book-form-ui",
       "branch": "feature/KAN-28-book-form-ui",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/23",
       "pr_number": 23,
-      "archived_at": null,
+      "archived_at": "2026-07-01T18:25:00Z",
       "error": null
     }
   }
