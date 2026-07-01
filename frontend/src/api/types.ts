@@ -68,7 +68,7 @@ export interface PatchReadingRecordPayload {
   started_on?: string;
   finished_on?: string;
   rating?: number;
-  read_format?: ReadFormat;
+  read_format?: ReadFormat | null;
 }
 
 export interface ReadingRecordResource {

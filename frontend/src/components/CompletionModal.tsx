@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReadFormat, ReadingRecordResource } from '../api/types';
-import { READ_FORMAT_OPTIONS } from './readingStatus';
+import { ReadFormatSelect } from './ReadFormatSelect';
 import { StarRating } from './StarRating';
 import './CompletionModal.css';
 
@@ -11,7 +11,7 @@ interface CompletionModalProps {
   onClose: () => void;
   onSave: (payload: {
     finished_on: string;
-    read_format?: ReadFormat;
+    read_format?: ReadFormat | null;
     rating?: number;
   }) => void;
 }
@@ -56,22 +56,13 @@ export function CompletionModal({
             onChange={(e) => setFinishedOn(e.target.value)}
           />
         </label>
-        <label className="completion-field">
-          Formato
-          <select
-            value={readFormat}
-            onChange={(e) =>
-              setReadFormat(e.target.value as ReadFormat | '')
-            }
-          >
-            <option value="">—</option>
-            {READ_FORMAT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ReadFormatSelect
+          id="completion-read-format"
+          label="Formato"
+          value={readFormat || null}
+          disabled={saving}
+          onChange={(value) => setReadFormat(value ?? '')}
+        />
         <div className="completion-field">
           <span>Puntuación</span>
           <StarRating
@@ -91,7 +82,7 @@ export function CompletionModal({
             onClick={() =>
               onSave({
                 finished_on: finishedOn,
-                ...(readFormat ? { read_format: readFormat } : {}),
+                read_format: readFormat ? readFormat : null,
                 ...(rating ? { rating } : {}),
               })
             }

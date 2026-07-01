@@ -11,6 +11,7 @@ import type {
 import type { ReadingRecordUpdateContext } from '../lib/goalsCacheInvalidation';
 import { InlineDateField } from './InlineDateField';
 import { AudienceSelect } from './AudienceSelect';
+import { ReadFormatSelect } from './ReadFormatSelect';
 import { ReadingStatusSelect } from './ReadingStatusSelect';
 import { StarRating } from './StarRating';
 
@@ -137,6 +138,16 @@ export function BookTrackerRow({
         ) : (
           '—'
         )}
+      </td>
+      <td className="format-cell">
+        <ReadFormatSelect
+          id={`format-${book.id}`}
+          label={`Formato de ${book.title}`}
+          className="read-format-select--inline"
+          value={book.read_format}
+          disabled={mutation.isPending || bookMutation.isPending}
+          onChange={(next) => patch({ read_format: next })}
+        />
       </td>
       <td>
         {showRating ? (
