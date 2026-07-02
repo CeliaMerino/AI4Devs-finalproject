@@ -75,7 +75,7 @@ Reading status and progress for a single book (1:1 with book).
 | status | `status` | VARCHAR(20) | NOT NULL; see enum below |
 | currentPage | `current_page` | INTEGER | NULL |
 | progressPercent | `progress_percent` | NUMERIC(5,2) | NULL |
-| rating | `rating` | SMALLINT | NULL, 1–5 if set |
+| rating | `rating` | NUMERIC(2,1) | NULL, 0.5–5.0 in 0.5 steps if set |
 | readFormat | `read_format` | VARCHAR(20) | NULL; see enum below |
 | startedOn | `started_on` | DATE | NULL |
 | finishedOn | `finished_on` | DATE | NULL |

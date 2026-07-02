@@ -28,6 +28,7 @@ import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.
 import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
+import { normalizeRating } from './validators/half-step-rating.validator';
 
 @Injectable()
 export class BooksService {
@@ -55,7 +56,7 @@ export class BooksService {
       reading_status: b.readingRecord?.status ?? 'pendiente',
       started_on: b.readingRecord?.startedOn ?? null,
       finished_on: b.readingRecord?.finishedOn ?? null,
-      rating: b.readingRecord?.rating ?? null,
+      rating: normalizeRating(b.readingRecord?.rating),
       read_format: b.readingRecord?.readFormat ?? null,
     }));
   }
@@ -88,7 +89,7 @@ export class BooksService {
       reading.finishedOn = dto.finished_on;
     }
     if (dto.rating !== undefined) {
-      reading.rating = dto.rating;
+      reading.rating = dto.rating === null ? null : String(dto.rating);
     }
     if (dto.read_format !== undefined) {
       reading.readFormat = dto.read_format;
@@ -186,7 +187,7 @@ export class BooksService {
       status: reading.status,
       current_page: reading.currentPage,
       progress_percent: reading.progressPercent,
-      rating: reading.rating,
+      rating: normalizeRating(reading.rating),
       read_format: reading.readFormat,
       started_on: reading.startedOn,
       finished_on: reading.finishedOn,

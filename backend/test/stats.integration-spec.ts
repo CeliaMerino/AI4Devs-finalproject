@@ -207,6 +207,56 @@ describe('Stats API (integration)', () => {
     expect(body.average_rating).toBe(4);
   });
 
+  it('averages half-star ratings correctly', async () => {
+    const halfStar = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Half Star A',
+        authors: 'Author',
+        data_source: 'manual',
+        page_count: 200,
+        genre: 'Fantasy',
+      })
+      .expect(201);
+
+    const halfStarId = halfStar.body.book.id;
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${halfStarId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        status: 'leido',
+        finished_on: '2023-03-15',
+        rating: 3.5,
+      })
+      .expect(200);
+
+    const wholeStar = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Whole Star B',
+        authors: 'Author',
+        data_source: 'manual',
+        page_count: 100,
+        genre: 'Fantasy',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${wholeStar.body.book.id}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        status: 'leido',
+        finished_on: '2023-03-20',
+        rating: 4,
+      })
+      .expect(200);
+
+    const body = await fetchStats(token, 2023, 3);
+    expect(body.average_rating).toBe(3.75);
+  });
+
   it('returns genre distribution with null bucketed as unknown, ordered by count desc (US-05 scenario 2)', async () => {
     const body = await fetchStats(token, 2025, 6);
     expect(body.genre_distribution[0]).toEqual({

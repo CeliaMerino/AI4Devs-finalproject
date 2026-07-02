@@ -34,8 +34,13 @@ export class ReadingRecord {
   })
   progressPercent: string | null;
 
-  @Column({ type: 'smallint', nullable: true })
-  rating: number | null;
+  @Column({
+    type: 'decimal',
+    precision: 2,
+    scale: 1,
+    nullable: true,
+  })
+  rating: string | null;
 
   @Column({ name: 'read_format', type: 'varchar', length: 20, nullable: true })
   readFormat: string | null;
