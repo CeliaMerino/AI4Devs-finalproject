@@ -22,6 +22,12 @@ The frontend SHALL provide an authenticated `/stats` route ("Reading Stats") tha
 - **WHEN** the user is on Home
 - **THEN** a `Reading Stats` link navigates to `/stats`
 
+#### Scenario: Tokenized page shell and period control (KAN-23)
+
+- **WHEN** an authenticated user opens `/stats`
+- **THEN** the page header, spacing, and month control use design-system token styling
+- **AND** the main content does not introduce horizontal page overflow
+
 ### Requirement: KPI cards
 
 The dashboard SHALL display KPI cards for books read, pages read, and average rating from the response, formatting `average_rating` as a human-readable value and showing a non-numeric placeholder (for example `—`) when it is `null`.
@@ -45,6 +51,11 @@ The dashboard SHALL render a genre-distribution chart from `genre_distribution`,
 - **WHEN** `genre_distribution` contains multiple genres
 - **THEN** the dashboard renders one chart segment/bar per genre with its count
 
+#### Scenario: Consistent chart card container (KAN-23)
+
+- **WHEN** genre data is available
+- **THEN** the chart renders inside a consistent chart-card layout aligned with other dashboard blocks
+
 ### Requirement: Format breakdown
 
 The dashboard SHALL render the format breakdown from `format_distribution` and highlight `predominant_format` when present.
@@ -53,6 +64,11 @@ The dashboard SHALL render the format breakdown from `format_distribution` and h
 
 - **WHEN** the response has `predominant_format: "fisico"`
 - **THEN** the format breakdown indicates `fisico` as the predominant format
+
+#### Scenario: Format chart card alignment (KAN-23)
+
+- **WHEN** format data is available
+- **THEN** the breakdown renders in a chart-card container with consistent spacing and typography
 
 ### Requirement: Month selection recalculates indicators
 
