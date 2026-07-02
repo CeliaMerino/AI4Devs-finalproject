@@ -6,22 +6,31 @@ describe('StatsService (pure helpers)', () => {
   describe('monthBounds', () => {
     it('computes inclusive start and exclusive next-month end', () => {
       expect(StatsService.monthBounds(2026, 6)).toEqual({
-        monthStart: '2026-06-01',
-        monthEnd: '2026-07-01',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-07-01',
       });
     });
 
     it('rolls December into the next year', () => {
       expect(StatsService.monthBounds(2026, 12)).toEqual({
-        monthStart: '2026-12-01',
-        monthEnd: '2027-01-01',
+        periodStart: '2026-12-01',
+        periodEnd: '2027-01-01',
       });
     });
 
     it('zero-pads single-digit months', () => {
       expect(StatsService.monthBounds(2026, 1)).toEqual({
-        monthStart: '2026-01-01',
-        monthEnd: '2026-02-01',
+        periodStart: '2026-01-01',
+        periodEnd: '2026-02-01',
+      });
+    });
+  });
+
+  describe('yearBounds', () => {
+    it('computes inclusive start and exclusive next-year end', () => {
+      expect(StatsService.yearBounds(2026)).toEqual({
+        periodStart: '2026-01-01',
+        periodEnd: '2027-01-01',
       });
     });
   });

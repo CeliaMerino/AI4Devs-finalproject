@@ -15,6 +15,7 @@ import { MonthlyTbrList } from '../src/lists/entities/monthly-tbr-list.entity';
 import { TbrEntry } from '../src/lists/entities/tbr-entry.entity';
 import { StatsModule } from '../src/stats/stats.module';
 import type { MonthlyStatsResponseDto } from '../src/stats/dto/monthly-stats-response.dto';
+import type { YearlyStatsResponseDto } from '../src/stats/dto/yearly-stats-response.dto';
 import { User } from '../src/users/user.entity';
 import { UsersModule } from '../src/users/users.module';
 
@@ -80,6 +81,13 @@ describe('Stats API (integration)', () => {
   function getStats(authToken: string, year: number, month: number) {
     return request(app.getHttpServer())
       .get(`/v1/stats/${year}/${month}`)
+      .set('Authorization', `Bearer ${authToken}`);
+  }
+
+  function getYearStats(authToken: string, year: number) {
+    return request(app.getHttpServer())
+      .get('/v1/stats')
+      .query({ period: 'year', year })
       .set('Authorization', `Bearer ${authToken}`);
   }
 
@@ -271,5 +279,38 @@ describe('Stats API (integration)', () => {
 
   it('requires authentication', async () => {
     await request(app.getHttpServer()).get('/v1/stats/2025/6').expect(401);
+  });
+
+  it('aggregates books and pages read for the full year', async () => {
+    const res = await getYearStats(token, 2025).expect(200);
+    const body = res.body as YearlyStatsResponseDto;
+    expect(body.year).toBe(2025);
+    // June (4) + May boundary (1) + July boundary (1) = 6 books in 2025
+    expect(body.books_read).toBe(6);
+    expect(body.pages_read).toBe(1220);
+  });
+
+  it('returns a zeroed payload for an empty year', async () => {
+    const res = await getYearStats(token, 2024).expect(200);
+    expect(res.body).toMatchObject({
+      year: 2024,
+      books_read: 0,
+      pages_read: 0,
+      average_rating: null,
+      predominant_format: null,
+      genre_distribution: [],
+      format_distribution: [],
+    });
+  });
+
+  it('rejects year query without authentication', async () => {
+    await request(app.getHttpServer())
+      .get('/v1/stats')
+      .query({ period: 'year', year: 2025 })
+      .expect(401);
+  });
+
+  it('rejects invalid year in query endpoint', async () => {
+    await getYearStats(token, 1800).expect(400);
   });
 });

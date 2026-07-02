@@ -10,6 +10,7 @@ import type {
   CreateBookPayload,
   EditionCoversResponse,
   MonthlyStatsResponse,
+  YearlyStatsResponse,
   MonthlyTbrResponse,
   PatchBookPayload,
   PatchReadingRecordPayload,
@@ -169,6 +170,14 @@ export async function getMonthlyStats(
   month: number,
 ): Promise<MonthlyStatsResponse> {
   return request(`/stats/${year}/${month}`);
+}
+
+export async function getYearlyStats(year: number): Promise<YearlyStatsResponse> {
+  const params = new URLSearchParams({
+    period: 'year',
+    year: String(year),
+  });
+  return request(`/stats?${params.toString()}`);
 }
 
 export function catalogEditionToCreatePayload(

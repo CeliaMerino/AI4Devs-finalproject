@@ -172,6 +172,18 @@ export interface MonthlyStatsResponse {
   predominant_format: string | null;
 }
 
+export interface YearlyStatsResponse {
+  year: number;
+  books_read: number;
+  pages_read: number;
+  average_rating: number | null;
+  genre_distribution: GenreCount[];
+  format_distribution: FormatCount[];
+  predominant_format: string | null;
+}
+
+export type StatsResponse = MonthlyStatsResponse | YearlyStatsResponse;
+
 export interface CreateBookPayload {
   title: string;
   authors: string;

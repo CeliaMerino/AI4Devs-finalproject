@@ -51,11 +51,25 @@ export function affectedStatsMonths(
   return months;
 }
 
+export function affectedStatsYears(
+  ctx: ReadingRecordUpdateContext,
+): number[] {
+  const years = new Set<number>();
+  for (const { year } of affectedStatsMonths(ctx)) {
+    years.add(year);
+  }
+  return [...years];
+}
+
 export function invalidateStatsForReadingUpdate(
   queryClient: QueryClient,
   ctx: ReadingRecordUpdateContext,
 ): void {
   for (const { year, month } of affectedStatsMonths(ctx)) {
+    queryClient.invalidateQueries({ queryKey: ['stats', 'month', year, month] });
     queryClient.invalidateQueries({ queryKey: ['stats', year, month] });
+  }
+  for (const year of affectedStatsYears(ctx)) {
+    queryClient.invalidateQueries({ queryKey: ['stats', 'year', year] });
   }
 }

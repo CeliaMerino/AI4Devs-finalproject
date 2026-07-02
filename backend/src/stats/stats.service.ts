@@ -8,6 +8,7 @@ import type {
   GenreCountDto,
   MonthlyStatsResponseDto,
 } from './dto/monthly-stats-response.dto';
+import type { YearlyStatsResponseDto } from './dto/yearly-stats-response.dto';
 
 const UNKNOWN_BUCKET = 'unknown';
 
@@ -25,6 +26,15 @@ interface DistributionRow {
   count: string | number | null;
 }
 
+interface PeriodAggregate {
+  books_read: number;
+  pages_read: number;
+  average_rating: number | null;
+  genre_distribution: GenreCountDto[];
+  format_distribution: FormatCountDto[];
+  predominant_format: string | null;
+}
+
 @Injectable()
 export class StatsService {
   constructor(
@@ -39,8 +49,34 @@ export class StatsService {
     year: number,
     month: number,
   ): Promise<MonthlyStatsResponseDto> {
-    const { monthStart, monthEnd } = StatsService.monthBounds(year, month);
+    const { periodStart, periodEnd } = StatsService.monthBounds(year, month);
+    const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
 
+    return {
+      year,
+      month,
+      ...aggregate,
+    };
+  }
+
+  async getYearlyStats(
+    userId: string,
+    year: number,
+  ): Promise<YearlyStatsResponseDto> {
+    const { periodStart, periodEnd } = StatsService.yearBounds(year);
+    const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
+
+    return {
+      year,
+      ...aggregate,
+    };
+  }
+
+  private async aggregateStats(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<PeriodAggregate> {
     const totals = await this.readingRepo
       .createQueryBuilder('rr')
       .innerJoin(Book, 'b', 'b.id = rr.bookId')
@@ -49,21 +85,19 @@ export class StatsService {
       .addSelect('AVG(rr.rating)', 'avgRating')
       .where('b.userId = :userId', { userId })
       .andWhere('rr.status = :status', { status: 'leido' })
-      .andWhere('rr.finishedOn >= :monthStart', { monthStart })
-      .andWhere('rr.finishedOn < :monthEnd', { monthEnd })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
       .getRawOne<AggregateRow>();
 
     const genreDistribution: GenreCountDto[] = (
-      await this.distribution(userId, monthStart, monthEnd, 'b.genre')
+      await this.distribution(userId, periodStart, periodEnd, 'b.genre')
     ).map(({ label, count }) => ({ genre: label, count }));
 
     const formatDistribution: FormatCountDto[] = (
-      await this.distribution(userId, monthStart, monthEnd, 'rr.readFormat')
+      await this.distribution(userId, periodStart, periodEnd, 'rr.readFormat')
     ).map(({ label, count }) => ({ format: label, count }));
 
     return {
-      year,
-      month,
       books_read: StatsService.toInt(totals?.booksRead),
       pages_read: StatsService.toInt(totals?.pagesRead),
       average_rating: StatsService.roundAverage(totals?.avgRating),
@@ -76,8 +110,8 @@ export class StatsService {
 
   private async distribution(
     userId: string,
-    monthStart: string,
-    monthEnd: string,
+    periodStart: string,
+    periodEnd: string,
     column: string,
   ): Promise<Array<{ label: string; count: number }>> {
     const rows = await this.readingRepo
@@ -87,8 +121,8 @@ export class StatsService {
       .addSelect('COUNT(*)', 'count')
       .where('b.userId = :userId', { userId })
       .andWhere('rr.status = :status', { status: 'leido' })
-      .andWhere('rr.finishedOn >= :monthStart', { monthStart })
-      .andWhere('rr.finishedOn < :monthEnd', { monthEnd })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
       .groupBy(`COALESCE(${column}, :unknown)`)
       .orderBy('COUNT(*)', 'DESC')
       .setParameter('unknown', UNKNOWN_BUCKET)
@@ -103,19 +137,30 @@ export class StatsService {
   static monthBounds(
     year: number,
     month: number,
-  ): { monthStart: string; monthEnd: string } {
+  ): { periodStart: string; periodEnd: string } {
     const mm = String(month).padStart(2, '0');
-    const monthStart = `${year}-${mm}-01`;
+    const periodStart = `${year}-${mm}-01`;
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
-    const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-    return { monthStart, monthEnd };
+    const periodEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+    return { periodStart, periodEnd };
   }
 
-  static validate(year: number, month: number): void {
+  static yearBounds(year: number): { periodStart: string; periodEnd: string } {
+    return {
+      periodStart: `${year}-01-01`,
+      periodEnd: `${year + 1}-01-01`,
+    };
+  }
+
+  static validateYear(year: number): void {
     if (!Number.isInteger(year) || year < 1970 || year > 2100) {
       throw new BadRequestException('year must be between 1970 and 2100');
     }
+  }
+
+  static validate(year: number, month: number): void {
+    StatsService.validateYear(year);
     if (!Number.isInteger(month) || month < 1 || month > 12) {
       throw new BadRequestException('month must be between 1 and 12');
     }

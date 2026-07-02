@@ -394,6 +394,57 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /stats:
+    get:
+      summary: Get reading statistics by period query
+      description: >-
+        Returns read-only reading statistics for the authenticated user for a
+        calendar year (`period=year`) or month (`period=month` with `month`).
+        Year mode uses the same aggregate fields as monthly stats without `month`.
+        Results are computed on read; empty periods return zeroed totals.
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [year, month]
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 2100
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Required when `period=month`
+      responses:
+        '200':
+          description: Period statistics snapshot
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MonthlyStatsResponse'
+                  - $ref: '#/components/schemas/YearlyStatsResponse'
+        '400':
+          description: Invalid period parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /stats/{year}/{month}:
     get:
       summary: Get monthly reading statistics
@@ -1159,6 +1210,40 @@ components:
             - type: string
             - type: 'null'
           description: Most frequent non-unknown format; null when no format recorded.
+
+    YearlyStatsResponse:
+      type: object
+      required:
+        - year
+        - books_read
+        - pages_read
+        - average_rating
+        - genre_distribution
+        - format_distribution
+        - predominant_format
+      properties:
+        year:
+          type: integer
+        books_read:
+          type: integer
+        pages_read:
+          type: integer
+        average_rating:
+          oneOf:
+            - type: number
+            - type: 'null'
+        genre_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenreCount'
+        format_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormatCount'
+        predominant_format:
+          oneOf:
+            - type: string
+            - type: 'null'
 
     BookDuplicateError:
       type: object
