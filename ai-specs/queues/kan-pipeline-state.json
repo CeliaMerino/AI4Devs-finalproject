@@ -126,12 +126,12 @@
       "error": null
     },
     "KAN-25": {
-      "status": "in_progress",
+      "status": "awaiting_merge",
       "failed_step": null,
       "change_name": "kan-25-goals-page-restyle",
       "branch": "feature/KAN-25-goals-page-restyle",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/30",
+      "pr_number": 30,
       "archived_at": null,
       "error": null
     }
