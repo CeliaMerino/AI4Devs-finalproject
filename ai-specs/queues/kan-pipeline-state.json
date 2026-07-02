@@ -144,6 +144,16 @@
       "pr_number": 31,
       "archived_at": "2026-07-02T13:55:00Z",
       "error": null
+    },
+    "KAN-31": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-31-half-star-ratings",
+      "branch": "feature/KAN-31-half-star-ratings",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/32",
+      "pr_number": 32,
+      "archived_at": null,
+      "error": null
     }
   }
 }
