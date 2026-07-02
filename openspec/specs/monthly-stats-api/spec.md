@@ -49,12 +49,17 @@ The system SHALL expose `GET /v1/stats/{year}/{month}` for the authenticated use
 
 ### Requirement: Average rating aggregation
 
-The system SHALL compute `average_rating` as the mean of non-null `reading_records.rating` (1–5) across the month's qualifying books, rounded to two decimals, and SHALL return `null` when no qualifying book has a rating.
+The system SHALL compute `average_rating` as the mean of non-null `reading_records.rating` (0.5–5 in 0.5 steps) across the period's qualifying books, rounded to two decimals, and SHALL return `null` when no qualifying book has a rating.
 
 #### Scenario: Average over rated books only
 
 - **WHEN** three qualifying books have ratings 5, 4, and null
 - **THEN** `average_rating` is `4.5` (computed over the two rated books)
+
+#### Scenario: Average includes half-star ratings
+
+- **WHEN** two qualifying books have ratings `4` and `3.5`
+- **THEN** `average_rating` is `3.75`
 
 #### Scenario: No rated books
 

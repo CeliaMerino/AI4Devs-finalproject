@@ -45,12 +45,22 @@ The Table component SHALL render inside a horizontally scrollable wrapper when c
 
 ### Requirement: StarRating keyboard navigation
 
-StarRating SHALL support arrow-key navigation between stars when focused.
+StarRating SHALL support arrow-key navigation in 0.5 steps when focused and SHALL expose the current rating as accessible text for screen readers.
 
-#### Scenario: Arrow key increases rating
+#### Scenario: Arrow key increases rating by half step
 
-- **WHEN** a star button is focused and the user presses ArrowRight
-- **THEN** focus moves to the next star and the rating updates accordingly
+- **WHEN** the control is focused with value `3` and the user presses ArrowRight
+- **THEN** the rating updates to `3.5`
+
+#### Scenario: Half-star display
+
+- **WHEN** `value` is `3.5`
+- **THEN** three stars render full, the fourth renders half-filled, and the fifth is empty
+
+#### Scenario: Half-star selection
+
+- **WHEN** the user activates the left half of the fourth star
+- **THEN** `onChange` is called with `3.5`
 
 ### Requirement: WCAG contrast for base components
 
