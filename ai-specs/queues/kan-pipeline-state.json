@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-24",
-  "current_ticket": null,
+  "current_ticket": "KAN-25",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -123,6 +123,16 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/29",
       "pr_number": 29,
       "archived_at": "2026-07-02T09:27:07Z",
+      "error": null
+    },
+    "KAN-25": {
+      "status": "in_progress",
+      "failed_step": null,
+      "change_name": "kan-25-goals-page-restyle",
+      "branch": "feature/KAN-25-goals-page-restyle",
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
       "error": null
     }
   }

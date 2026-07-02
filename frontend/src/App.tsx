@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { BookTrackerPage } from './pages/BookTrackerPage';
+import { GoalsPage } from './pages/GoalsPage';
 import { HomePage } from './pages/HomePage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
@@ -35,15 +36,7 @@ function AppRoutes() {
         <Route path="book-tracker" element={<BookTrackerPage />} />
         <Route path="lists" element={<ListsPage />} />
         <Route path="stats" element={<StatsPage />} />
-        <Route
-          path="goals"
-          element={
-            <PlaceholderPage
-              title="Goals"
-              description="Annual reading goals, forecast, and progress tracking will live here."
-            />
-          }
-        />
+        <Route path="goals" element={<GoalsPage />} />
         <Route
           path="library"
           element={
