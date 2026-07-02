@@ -84,14 +84,6 @@
   font-style: italic;
 }
 
-.stats-charts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: var(--space-5);
-  width: 100%;
-  min-width: 0;
-}
-
 .genre-chart__list {
   list-style: none;
   margin: 0;
@@ -168,9 +160,5 @@
 
   .stats-period-filter__field {
     min-width: 100%;
-  }
-
-  .stats-charts {
-    grid-template-columns: 1fr;
   }
 }
