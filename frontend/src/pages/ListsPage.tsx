@@ -5,6 +5,7 @@ import { messageFromUnknownError } from '../api/errors';
 import { AddToTbrModal } from '../components/AddToTbrModal';
 import { TbrEmptyState } from '../components/TbrEmptyState';
 import { TbrEntryRow } from '../components/TbrEntryRow';
+import { Button, PageHeader } from '../components/ui';
 import './ListsPage.css';
 
 const MONTH_NAMES = [
@@ -67,28 +68,39 @@ export function ListsPage() {
 
   return (
     <div className="lists-page">
+      <PageHeader
+        title={title}
+        subtitle="Organiza tu TBR mensual y marca lecturas completadas."
+        actions={
+          data && data.entries.length > 0 ? (
+            <Button type="button" onClick={() => setAddModalOpen(true)}>
+              Add books
+            </Button>
+          ) : null
+        }
+      />
       <header className="lists-header">
-        <h1>{title}</h1>
-        <div className="lists-month-nav">
-          <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <div className="lists-month-nav" role="group" aria-label="Month navigation">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => shiftMonth(-1)}
+            aria-label="Previous month"
+          >
             ←
-          </button>
-          <span>
+          </Button>
+          <span className="lists-month-nav__label">
             {MONTH_NAMES[month - 1]} {year}
           </span>
-          <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month">
-            →
-          </button>
-        </div>
-        {data && data.entries.length > 0 && (
-          <button
+          <Button
             type="button"
-            className="btn-primary"
-            onClick={() => setAddModalOpen(true)}
+            variant="secondary"
+            onClick={() => shiftMonth(1)}
+            aria-label="Next month"
           >
-            Add books
-          </button>
-        )}
+            →
+          </Button>
+        </div>
       </header>
 
       {isLoading && <p>Loading TBR…</p>}

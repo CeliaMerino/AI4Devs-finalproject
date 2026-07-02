@@ -9,6 +9,7 @@ import {
 } from '../api/client';
 import { ApiRequestError, messageFromUnknownError } from '../api/errors';
 import type { Book, CatalogEdition } from '../api/types';
+import { Button } from './ui';
 import './AddToTbrModal.css';
 
 type Tab = 'library' | 'search';
@@ -298,17 +299,16 @@ export function AddToTbrModal({
         )}
 
         <footer className="add-tbr-modal__footer">
-          <button type="button" onClick={onClose} disabled={submitting}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn-primary"
             disabled={!canConfirm || submitting}
             onClick={handleConfirm}
           >
             Add to list
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
