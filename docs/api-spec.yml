@@ -644,9 +644,11 @@ components:
           type: string
           format: date
         rating:
-          type: integer
-          minimum: 1
+          type: number
+          minimum: 0.5
           maximum: 5
+          multipleOf: 0.5
+          description: Half-star rating from 0.5 to 5 in 0.5 steps.
         read_format:
           oneOf:
             - $ref: '#/components/schemas/ReadFormat'
@@ -668,10 +670,11 @@ components:
           type: string
           nullable: true
         rating:
-          type: integer
+          type: number
           nullable: true
-          minimum: 1
+          minimum: 0.5
           maximum: 5
+          multipleOf: 0.5
         read_format:
           oneOf:
             - $ref: '#/components/schemas/ReadFormat'
@@ -810,10 +813,11 @@ components:
               format: date
               nullable: true
             rating:
-              type: integer
+              type: number
               nullable: true
-              minimum: 1
+              minimum: 0.5
               maximum: 5
+              multipleOf: 0.5
             read_format:
               oneOf:
                 - $ref: '#/components/schemas/ReadFormat'

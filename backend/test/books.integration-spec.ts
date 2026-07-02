@@ -367,4 +367,32 @@ describe('Books API (integration)', () => {
     );
     expect(item.read_format).toBeNull();
   });
+
+  it('PATCH reading-record accepts half-star rating', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ rating: 3.5 })
+      .expect(200);
+
+    expect(res.body.reading.rating).toBe(3.5);
+  });
+
+  it('PATCH reading-record rejects invalid half-star rating', async () => {
+    await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}/reading-record`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ rating: 3.3 })
+      .expect(400);
+  });
+
+  it('GET /v1/books returns half-star rating', async () => {
+    const list = await request(app.getHttpServer())
+      .get('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const item = list.body.find((b: { id: string }) => b.id === bookId);
+    expect(item.rating).toBe(3.5);
+  });
 });

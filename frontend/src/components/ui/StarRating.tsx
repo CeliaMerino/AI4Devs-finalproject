@@ -1,4 +1,12 @@
-import { useCallback, type KeyboardEvent } from 'react';
+import { useCallback, useId, type KeyboardEvent } from 'react';
+import {
+  formatRatingLabel,
+  MAX_RATING,
+  MIN_RATING,
+  RATING_STEP,
+  starFillState,
+  stepHalfStepRating,
+} from '../../lib/rating';
 import './StarRating.css';
 
 export interface StarRatingProps {
@@ -14,45 +22,74 @@ export function StarRating({
   disabled,
   'aria-label': ariaLabel = 'Rating',
 }: StarRatingProps) {
+  const labelId = useId();
   const current = value ?? 0;
+  const valueLabel = formatRatingLabel(value);
 
   const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>, star: number) => {
-      if (disabled) return;
+    (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (disabled) {
+        return;
+      }
 
       if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
         event.preventDefault();
-        onChange(Math.min(5, star + 1));
+        onChange(stepHalfStepRating(current, RATING_STEP));
       } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
         event.preventDefault();
-        onChange(Math.max(1, star - 1));
+        onChange(stepHalfStepRating(current, -RATING_STEP));
       } else if (event.key === 'Home') {
         event.preventDefault();
-        onChange(1);
+        onChange(MIN_RATING);
       } else if (event.key === 'End') {
         event.preventDefault();
-        onChange(5);
+        onChange(MAX_RATING);
       }
     },
-    [disabled, onChange],
+    [current, disabled, onChange],
   );
 
   return (
-    <div className="ui-star-rating" role="group" aria-label={ariaLabel}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          className={`ui-star-rating__star ${star <= current ? 'ui-star-rating__star--filled' : ''}`}
-          disabled={disabled}
-          aria-label={`${star} of 5 stars`}
-          aria-pressed={star <= current}
-          onClick={() => onChange(star)}
-          onKeyDown={(event) => handleKeyDown(event, star)}
-        >
-          ★
-        </button>
-      ))}
+    <div
+      className="ui-star-rating"
+      role="group"
+      aria-labelledby={labelId}
+    >
+      <span id={labelId} className="ui-star-rating__sr-only">
+        {ariaLabel}: {valueLabel}
+      </span>
+      {[1, 2, 3, 4, 5].map((star) => {
+        const fill = starFillState(star, current);
+        const halfValue = star - RATING_STEP;
+        return (
+          <span key={star} className="ui-star-rating__star-slot">
+            <span
+              className={`ui-star-rating__glyph ui-star-rating__glyph--${fill}`}
+              aria-hidden="true"
+            >
+              ★
+            </span>
+            <button
+              type="button"
+              className="ui-star-rating__half ui-star-rating__half--left"
+              disabled={disabled}
+              aria-label={formatRatingLabel(halfValue)}
+              aria-pressed={current === halfValue}
+              onClick={() => onChange(halfValue)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              type="button"
+              className="ui-star-rating__half ui-star-rating__half--right"
+              disabled={disabled}
+              aria-label={formatRatingLabel(star)}
+              aria-pressed={current === star}
+              onClick={() => onChange(star)}
+              onKeyDown={handleKeyDown}
+            />
+          </span>
+        );
+      })}
     </div>
   );
 }

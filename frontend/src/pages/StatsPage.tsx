@@ -13,17 +13,8 @@ import {
   toMonthInputValue,
   type StatsPeriod,
 } from '../lib/statsPeriodStorage';
+import { formatAverageRating } from '../lib/rating';
 import './StatsPage.css';
-
-function formatAverageRating(value: number | null): string {
-  if (value === null) {
-    return '—';
-  }
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
 
 function periodLabel(period: StatsPeriod): string {
   if (period.mode === 'year') {
