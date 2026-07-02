@@ -4,6 +4,11 @@ import { getMonthlyStats, getYearlyStats } from '../api/client';
 import type { StatsResponse } from '../api/types';
 import { FormatBreakdown } from '../components/FormatBreakdown';
 import { GenreDistributionChart } from '../components/GenreDistributionChart';
+import {
+  ChartSlotPlaceholder,
+  StatsChartsGrid,
+} from '../components/stats/StatsChartsGrid';
+import '../components/stats/StatsChartsGrid.css';
 import { KpiCard } from '../components/KpiCard';
 import { PageHeader } from '../components/ui';
 import {
@@ -165,18 +170,72 @@ export function StatsPage() {
                   : 'No hay libros marcados como leídos en este mes.'}
               </p>
             ) : (
-              <section
-                className="stats-charts"
-                aria-label={`Gráficos ${periodScope}`}
-              >
-                <GenreDistributionChart
-                  distribution={data.genre_distribution}
-                />
-                <FormatBreakdown
-                  distribution={data.format_distribution}
-                  predominantFormat={data.predominant_format}
-                />
-              </section>
+              <StatsChartsGrid
+                periodScope={periodScope}
+                genreChart={
+                  data.genre_distribution.length > 0 ? (
+                    <GenreDistributionChart
+                      distribution={data.genre_distribution}
+                    />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Distribución por género"
+                      subtitle="Comparativa de libros leídos por género."
+                      slotLabel="Gráfico de géneros"
+                    />
+                  )
+                }
+                formatChart={
+                  data.format_distribution.length > 0 ? (
+                    <FormatBreakdown
+                      distribution={data.format_distribution}
+                      predominantFormat={data.predominant_format}
+                    />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Formato de lectura"
+                      subtitle="Resumen de formatos usados en el período."
+                      slotLabel="Gráfico de formatos"
+                    />
+                  )
+                }
+                audienceChart={
+                  <ChartSlotPlaceholder
+                    title="Distribución por audiencia"
+                    subtitle="Young adult, new adult y adulto."
+                    slotLabel="Gráfico de audiencia"
+                  />
+                }
+                ratingChart={
+                  <ChartSlotPlaceholder
+                    title="Distribución de puntuaciones"
+                    subtitle="Valoraciones asignadas en el período."
+                    slotLabel="Gráfico de puntuaciones"
+                  />
+                }
+                booksBarChart={
+                  <ChartSlotPlaceholder
+                    title={
+                      period.mode === 'year'
+                        ? 'Libros por mes'
+                        : 'Libros en el mes'
+                    }
+                    subtitle="Evolución del volumen de lecturas."
+                    slotLabel="Gráfico de barras de libros"
+                  />
+                }
+                pagesBarChart={
+                  <ChartSlotPlaceholder
+                    title={
+                      period.mode === 'year'
+                        ? 'Páginas por mes'
+                        : 'Páginas en el mes'
+                    }
+                    subtitle="Evolución de páginas leídas."
+                    slotLabel="Gráfico de barras de páginas"
+                  />
+                }
+              />
             )}
           </>
         )}

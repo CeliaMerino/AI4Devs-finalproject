@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-31",
-  "current_ticket": null,
+  "current_ticket": "KAN-40",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -153,6 +153,49 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/32",
       "pr_number": 32,
       "archived_at": "2026-07-02T15:50:00Z",
+      "error": null
+    },
+    "KAN-32": {
+      "status": "skipped",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null,
+      "skip_reason": "Delivered in KAN-31 PR #32 (backend migration + validation)"
+    },
+    "KAN-33": {
+      "status": "skipped",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null,
+      "skip_reason": "Delivered in KAN-31 PR #32 (StarRating half-star UI)"
+    },
+    "KAN-34": {
+      "status": "skipped",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null,
+      "skip_reason": "Delivered in KAN-31 PR #32 (stats average half-stars)"
+    },
+    "KAN-40": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-40-stats-charts-grid",
+      "branch": "feature/KAN-40-stats-charts-grid",
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
       "error": null
     }
   }
