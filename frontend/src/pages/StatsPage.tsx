@@ -4,6 +4,7 @@ import { getMonthlyStats } from '../api/client';
 import { FormatBreakdown } from '../components/FormatBreakdown';
 import { GenreDistributionChart } from '../components/GenreDistributionChart';
 import { KpiCard } from '../components/KpiCard';
+import { PageHeader } from '../components/ui';
 import './StatsPage.css';
 
 interface YearMonth {
@@ -62,17 +63,22 @@ export function StatsPage() {
 
   return (
     <div className="stats-page">
-      <header className="stats-header">
-        <h1>Reading Stats</h1>
-        <label className="stats-month-picker">
-          Mes
-          <input
-            type="month"
-            value={toMonthInputValue(period)}
-            onChange={handleMonthChange}
-          />
-        </label>
-      </header>
+      <PageHeader
+        title="Reading Stats"
+        subtitle="Visualiza tus métricas mensuales y distribuciones de lectura."
+        actions={
+          <label className="stats-month-picker" htmlFor="stats-month">
+            <span className="stats-month-picker__label">Mes</span>
+            <input
+              id="stats-month"
+              className="stats-month-picker__input"
+              type="month"
+              value={toMonthInputValue(period)}
+              onChange={handleMonthChange}
+            />
+          </label>
+        }
+      />
 
       <main className="stats-main">
         {isLoading && <p aria-busy="true">Cargando estadísticas…</p>}
@@ -105,7 +111,7 @@ export function StatsPage() {
                 No hay libros marcados como leídos en este mes.
               </p>
             ) : (
-              <div className="stats-charts">
+              <section className="stats-charts" aria-label="Gráficos del mes">
                 <GenreDistributionChart
                   distribution={data.genre_distribution}
                 />
@@ -113,7 +119,7 @@ export function StatsPage() {
                   distribution={data.format_distribution}
                   predominantFormat={data.predominant_format}
                 />
-              </div>
+              </section>
             )}
           </>
         )}

@@ -1,4 +1,5 @@
 import type { FormatCount } from '../api/types';
+import { ChartCard } from './ui';
 
 interface FormatBreakdownProps {
   distribution: FormatCount[];
@@ -25,8 +26,11 @@ export function FormatBreakdown({
   }
 
   return (
-    <section className="format-breakdown" aria-labelledby="format-breakdown-heading">
-      <h3 id="format-breakdown-heading">Formato de lectura</h3>
+    <ChartCard
+      className="format-breakdown"
+      title="Formato de lectura"
+      subtitle="Resumen de formatos usados en el período."
+    >
       {predominantFormat && (
         <p className="format-breakdown__predominant">
           Formato predominante:{' '}
@@ -50,6 +54,6 @@ export function FormatBreakdown({
           </li>
         ))}
       </ul>
-    </section>
+    </ChartCard>
   );
 }
