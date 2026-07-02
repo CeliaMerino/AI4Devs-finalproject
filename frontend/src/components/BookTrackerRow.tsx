@@ -82,17 +82,19 @@ export function BookTrackerRow({
 
   return (
     <tr>
-      <td>
+      <td className="col-cover">
         {book.cover_image_url ? (
           <img src={book.cover_image_url} alt="" className="table-cover" />
         ) : (
           <span className="no-cover">—</span>
         )}
       </td>
-      <td>{book.title}</td>
-      <td>{book.authors}</td>
-      <td>{book.genre ?? '—'}</td>
-      <td className="audience-cell">
+      <td className="col-title" title={book.title}>
+        {book.title}
+      </td>
+      <td className="col-author">{book.authors}</td>
+      <td className="col-genre">{book.genre ?? '—'}</td>
+      <td className="col-audience audience-cell">
         <AudienceSelect
           id={`audience-${book.id}`}
           label={`Audience for ${book.title}`}
@@ -102,8 +104,8 @@ export function BookTrackerRow({
           onChange={(next) => bookMutation.mutate(next)}
         />
       </td>
-      <td>{book.page_count ?? '—'}</td>
-      <td className="status-cell">
+      <td className="col-pages">{book.page_count ?? '—'}</td>
+      <td className="col-status status-cell">
         <ReadingStatusSelect
           value={status}
           disabled={mutation.isPending}
@@ -115,7 +117,7 @@ export function BookTrackerRow({
           </span>
         )}
       </td>
-      <td>
+      <td className="col-date">
         {showStartDate ? (
           <InlineDateField
             label="Fecha de inicio"
@@ -127,7 +129,7 @@ export function BookTrackerRow({
           '—'
         )}
       </td>
-      <td>
+      <td className="col-date">
         {showFinishDate ? (
           <InlineDateField
             label="Fecha de fin"
@@ -139,7 +141,7 @@ export function BookTrackerRow({
           '—'
         )}
       </td>
-      <td className="format-cell">
+      <td className="col-format format-cell">
         <ReadFormatSelect
           id={`format-${book.id}`}
           label={`Formato de ${book.title}`}
@@ -149,7 +151,7 @@ export function BookTrackerRow({
           onChange={(next) => patch({ read_format: next })}
         />
       </td>
-      <td>
+      <td className="col-rating">
         {showRating ? (
           <StarRating
             value={book.rating}
@@ -160,7 +162,7 @@ export function BookTrackerRow({
           '—'
         )}
       </td>
-      <td className="actions-cell">
+      <td className="col-actions actions-cell">
         <button
           type="button"
           className="row-edit-btn"
