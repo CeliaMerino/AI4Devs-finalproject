@@ -33,6 +33,12 @@ The application SHALL provide a Home page at `/` displaying an annual goal card 
 - **WHEN** `forecast` is null
 - **THEN** the card shows neutral copy inviting the user to mark books as read to see a prediction
 
+#### Scenario: Tokenized annual goal card presentation (KAN-21)
+
+- **WHEN** the annual goal card renders on Home
+- **THEN** visual styles (colors, spacing, borders, focus states) use semantic design tokens
+- **AND** create/edit/save interactions behave exactly as before
+
 ### Requirement: Home as authenticated landing route
 
 The application SHALL route authenticated users to `/` as the default landing page while keeping Book Tracker at `/book-tracker`.

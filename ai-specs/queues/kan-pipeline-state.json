@@ -2,8 +2,8 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": "KAN-22",
-  "current_ticket": "KAN-21",
+  "last_completed": "KAN-21",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -96,13 +96,13 @@
       "error": null
     },
     "KAN-21": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-21-home-restyle",
       "branch": "feature/KAN-21-home-restyle",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/27",
       "pr_number": 27,
-      "archived_at": null,
+      "archived_at": "2026-07-02T08:27:59Z",
       "error": null
     }
   }
