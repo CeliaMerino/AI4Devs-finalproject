@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-25",
-  "current_ticket": null,
+  "current_ticket": "KAN-38",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -133,6 +133,16 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/30",
       "pr_number": 30,
       "archived_at": "2026-07-02T10:15:29Z",
+      "error": null
+    },
+    "KAN-38": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-38-reading-stats-year-filter",
+      "branch": "feature/KAN-38-reading-stats-year-filter",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/31",
+      "pr_number": 31,
+      "archived_at": null,
       "error": null
     }
   }
