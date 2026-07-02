@@ -8,6 +8,12 @@ Home page annual goal card and default landing route for reading goal UX (UC-06,
 
 The application SHALL provide a Home page at `/` displaying an annual goal card for the current UTC calendar year.
 
+#### Scenario: Annual goal card reused on Goals route (KAN-25)
+
+- **WHEN** the user opens `/goals`
+- **THEN** the annual-goal card shows the same progress, forecast, and edit interactions as on Home
+- **AND** styling remains design-system consistent
+
 #### Scenario: Configure goal from Home (US-03 scenario 1)
 
 - **WHEN** the user is on Home and submits a target of 50 books
