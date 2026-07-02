@@ -4,9 +4,11 @@ import { Repository } from 'typeorm';
 import { Book } from '../books/entities/book.entity';
 import { ReadingRecord } from '../books/entities/reading-record.entity';
 import type {
+  AudienceCountDto,
   FormatCountDto,
   GenreCountDto,
   MonthlyStatsResponseDto,
+  RatingCountDto,
 } from './dto/monthly-stats-response.dto';
 import type { YearlyStatsResponseDto } from './dto/yearly-stats-response.dto';
 
@@ -33,6 +35,8 @@ interface PeriodAggregate {
   genre_distribution: GenreCountDto[];
   format_distribution: FormatCountDto[];
   predominant_format: string | null;
+  audience_distribution: AudienceCountDto[];
+  rating_distribution: RatingCountDto[];
 }
 
 @Injectable()
@@ -97,6 +101,13 @@ export class StatsService {
       await this.distribution(userId, periodStart, periodEnd, 'rr.readFormat')
     ).map(({ label, count }) => ({ format: label, count }));
 
+    const audienceDistribution: AudienceCountDto[] = (
+      await this.distribution(userId, periodStart, periodEnd, 'b.audience')
+    ).map(({ label, count }) => ({ audience: label, count }));
+
+    const ratingDistribution: RatingCountDto[] =
+      await this.ratingDistribution(userId, periodStart, periodEnd);
+
     return {
       books_read: StatsService.toInt(totals?.booksRead),
       pages_read: StatsService.toInt(totals?.pagesRead),
@@ -105,6 +116,8 @@ export class StatsService {
       format_distribution: formatDistribution,
       predominant_format:
         StatsService.pickPredominantFormat(formatDistribution),
+      audience_distribution: audienceDistribution,
+      rating_distribution: ratingDistribution,
     };
   }
 
@@ -130,6 +143,31 @@ export class StatsService {
 
     return rows.map((row) => ({
       label: row.key ?? UNKNOWN_BUCKET,
+      count: StatsService.toInt(row.count),
+    }));
+  }
+
+  private async ratingDistribution(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<RatingCountDto[]> {
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .select('rr.rating', 'key')
+      .addSelect('COUNT(*)', 'count')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .andWhere('rr.rating IS NOT NULL')
+      .groupBy('rr.rating')
+      .orderBy('rr.rating', 'ASC')
+      .getRawMany<DistributionRow>();
+
+    return rows.map((row) => ({
+      rating: StatsService.roundAverage(row.key) ?? 0,
       count: StatsService.toInt(row.count),
     }));
   }

@@ -8,6 +8,16 @@ export interface FormatCountDto {
   count: number;
 }
 
+export interface AudienceCountDto {
+  audience: string;
+  count: number;
+}
+
+export interface RatingCountDto {
+  rating: number;
+  count: number;
+}
+
 export interface MonthlyStatsResponseDto {
   year: number;
   month: number;
@@ -17,4 +27,6 @@ export interface MonthlyStatsResponseDto {
   genre_distribution: GenreCountDto[];
   format_distribution: FormatCountDto[];
   predominant_format: string | null;
+  audience_distribution: AudienceCountDto[];
+  rating_distribution: RatingCountDto[];
 }

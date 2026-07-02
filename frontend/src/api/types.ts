@@ -161,6 +161,16 @@ export interface FormatCount {
   count: number;
 }
 
+export interface AudienceCount {
+  audience: string;
+  count: number;
+}
+
+export interface RatingCount {
+  rating: number;
+  count: number;
+}
+
 export interface MonthlyStatsResponse {
   year: number;
   month: number;
@@ -170,6 +180,8 @@ export interface MonthlyStatsResponse {
   genre_distribution: GenreCount[];
   format_distribution: FormatCount[];
   predominant_format: string | null;
+  audience_distribution: AudienceCount[];
+  rating_distribution: RatingCount[];
 }
 
 export interface YearlyStatsResponse {
@@ -180,6 +192,8 @@ export interface YearlyStatsResponse {
   genre_distribution: GenreCount[];
   format_distribution: FormatCount[];
   predominant_format: string | null;
+  audience_distribution: AudienceCount[];
+  rating_distribution: RatingCount[];
 }
 
 export type StatsResponse = MonthlyStatsResponse | YearlyStatsResponse;

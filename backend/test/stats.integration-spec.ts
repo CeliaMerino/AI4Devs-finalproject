@@ -28,6 +28,7 @@ interface SeedBook {
   finishedOn?: string;
   rating?: number;
   readFormat?: 'fisico' | 'ebook' | 'audio';
+  audience?: 'young_adult' | 'new_adult' | 'adult' | null;
 }
 
 describe('Stats API (integration)', () => {
@@ -52,6 +53,7 @@ describe('Stats API (integration)', () => {
         data_source: 'manual',
         genre: book.genre ?? null,
         page_count: book.pageCount ?? null,
+        audience: book.audience ?? null,
       })
       .expect(201);
     const bookId = (createRes.body as { book: { id: string } }).book.id;
@@ -142,6 +144,7 @@ describe('Stats API (integration)', () => {
       finishedOn: '2025-06-10',
       rating: 5,
       readFormat: 'fisico',
+      audience: 'young_adult',
     });
     await seedBook(token, {
       title: 'Fantasy B',
@@ -150,6 +153,7 @@ describe('Stats API (integration)', () => {
       finishedOn: '2025-06-20',
       rating: 4,
       readFormat: 'fisico',
+      audience: 'young_adult',
     });
     await seedBook(token, {
       title: 'Sci-Fi C',
@@ -157,6 +161,7 @@ describe('Stats API (integration)', () => {
       pageCount: 400,
       finishedOn: '2025-06-15',
       readFormat: 'ebook',
+      audience: 'adult',
     });
     await seedBook(token, {
       title: 'No genre D',
@@ -278,6 +283,26 @@ describe('Stats API (integration)', () => {
     expect(body.predominant_format).toBe('fisico');
   });
 
+  it('returns audience distribution with null bucketed as unknown', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    const byAudience = Object.fromEntries(
+      body.audience_distribution.map((a) => [a.audience, a.count]),
+    );
+    expect(byAudience).toEqual({
+      young_adult: 2,
+      adult: 1,
+      unknown: 1,
+    });
+  });
+
+  it('returns rating distribution for rated books only', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    const byRating = Object.fromEntries(
+      body.rating_distribution.map((r) => [r.rating, r.count]),
+    );
+    expect(byRating).toEqual({ 3: 1, 4: 1, 5: 1 });
+  });
+
   it('excludes books finished on the last day of the previous month', async () => {
     const body = await fetchStats(token, 2025, 5);
     expect(body.books_read).toBe(1);
@@ -297,6 +322,8 @@ describe('Stats API (integration)', () => {
       predominant_format: null,
       genre_distribution: [],
       format_distribution: [],
+      audience_distribution: [],
+      rating_distribution: [],
     });
   });
 
@@ -350,6 +377,8 @@ describe('Stats API (integration)', () => {
       predominant_format: null,
       genre_distribution: [],
       format_distribution: [],
+      audience_distribution: [],
+      rating_distribution: [],
     });
   });
 
