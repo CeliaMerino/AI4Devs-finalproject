@@ -5,9 +5,9 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value }: KpiCardProps) {
   return (
-    <div className="kpi-card">
+    <article className="kpi-card" aria-label={label}>
       <span className="kpi-card__value">{value}</span>
       <span className="kpi-card__label">{label}</span>
-    </div>
+    </article>
   );
 }

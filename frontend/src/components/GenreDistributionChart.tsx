@@ -1,4 +1,5 @@
 import type { GenreCount } from '../api/types';
+import { ChartCard } from './ui';
 
 interface GenreDistributionChartProps {
   distribution: GenreCount[];
@@ -22,11 +23,11 @@ export function GenreDistributionChart({
   const max = Math.max(...distribution.map((entry) => entry.count));
 
   return (
-    <section
+    <ChartCard
       className="genre-chart"
-      aria-labelledby="genre-chart-heading"
+      title="Distribución por género"
+      subtitle="Comparativa de libros leídos por género en el período."
     >
-      <h3 id="genre-chart-heading">Distribución por género</h3>
       <ul className="genre-chart__list">
         {distribution.map((entry) => {
           const widthPercent = max > 0 ? (entry.count / max) * 100 : 0;
@@ -48,6 +49,6 @@ export function GenreDistributionChart({
           );
         })}
       </ul>
-    </section>
+    </ChartCard>
   );
 }
