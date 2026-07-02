@@ -1176,6 +1176,26 @@ components:
         count:
           type: integer
 
+    AudienceCount:
+      type: object
+      required: [audience, count]
+      properties:
+        audience:
+          type: string
+          description: Book audience (`young_adult` | `new_adult` | `adult`), or `unknown` when unset.
+        count:
+          type: integer
+
+    RatingCount:
+      type: object
+      required: [rating, count]
+      properties:
+        rating:
+          type: number
+          description: Rating value (0.5 step, 0.5–5).
+        count:
+          type: integer
+
     MonthlyStatsResponse:
       type: object
       required:
@@ -1187,6 +1207,8 @@ components:
         - genre_distribution
         - format_distribution
         - predominant_format
+        - audience_distribution
+        - rating_distribution
       properties:
         year:
           type: integer
@@ -1214,6 +1236,14 @@ components:
             - type: string
             - type: 'null'
           description: Most frequent non-unknown format; null when no format recorded.
+        audience_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceCount'
+        rating_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/RatingCount'
 
     YearlyStatsResponse:
       type: object
@@ -1225,6 +1255,8 @@ components:
         - genre_distribution
         - format_distribution
         - predominant_format
+        - audience_distribution
+        - rating_distribution
       properties:
         year:
           type: integer
@@ -1248,6 +1280,14 @@ components:
           oneOf:
             - type: string
             - type: 'null'
+        audience_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceCount'
+        rating_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/RatingCount'
 
     BookDuplicateError:
       type: object

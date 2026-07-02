@@ -2,13 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getMonthlyStats, getYearlyStats } from '../api/client';
 import type { StatsResponse } from '../api/types';
-import { FormatBreakdown } from '../components/FormatBreakdown';
-import { GenreDistributionChart } from '../components/GenreDistributionChart';
+import { AudiencePieChart } from '../components/stats/AudiencePieChart';
+import { FormatPieChart } from '../components/stats/FormatPieChart';
+import { GenrePieChart } from '../components/stats/GenrePieChart';
+import { RatingPieChart } from '../components/stats/RatingPieChart';
 import {
   ChartSlotPlaceholder,
   StatsChartsGrid,
 } from '../components/stats/StatsChartsGrid';
 import '../components/stats/StatsChartsGrid.css';
+import '../components/stats/PieChart.css';
 import { KpiCard } from '../components/KpiCard';
 import { PageHeader } from '../components/ui';
 import {
@@ -174,9 +177,7 @@ export function StatsPage() {
                 periodScope={periodScope}
                 genreChart={
                   data.genre_distribution.length > 0 ? (
-                    <GenreDistributionChart
-                      distribution={data.genre_distribution}
-                    />
+                    <GenrePieChart distribution={data.genre_distribution} />
                   ) : (
                     <ChartSlotPlaceholder
                       title="Distribución por género"
@@ -187,7 +188,7 @@ export function StatsPage() {
                 }
                 formatChart={
                   data.format_distribution.length > 0 ? (
-                    <FormatBreakdown
+                    <FormatPieChart
                       distribution={data.format_distribution}
                       predominantFormat={data.predominant_format}
                     />
@@ -200,18 +201,28 @@ export function StatsPage() {
                   )
                 }
                 audienceChart={
-                  <ChartSlotPlaceholder
-                    title="Distribución por audiencia"
-                    subtitle="Young adult, new adult y adulto."
-                    slotLabel="Gráfico de audiencia"
-                  />
+                  data.audience_distribution.length > 0 ? (
+                    <AudiencePieChart
+                      distribution={data.audience_distribution}
+                    />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Distribución por audiencia"
+                      subtitle="Young adult, new adult y adulto."
+                      slotLabel="Gráfico de audiencia"
+                    />
+                  )
                 }
                 ratingChart={
-                  <ChartSlotPlaceholder
-                    title="Distribución de puntuaciones"
-                    subtitle="Valoraciones asignadas en el período."
-                    slotLabel="Gráfico de puntuaciones"
-                  />
+                  data.rating_distribution.length > 0 ? (
+                    <RatingPieChart distribution={data.rating_distribution} />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Distribución de puntuaciones"
+                      subtitle="Valoraciones asignadas en el período."
+                      slotLabel="Gráfico de puntuaciones"
+                    />
+                  )
                 }
                 booksBarChart={
                   <ChartSlotPlaceholder
