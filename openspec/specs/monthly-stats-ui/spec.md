@@ -44,12 +44,12 @@ The dashboard SHALL display KPI cards for books read, pages read, and average ra
 
 ### Requirement: Genre distribution chart
 
-The dashboard SHALL render a genre-distribution chart from `genre_distribution`, with a text/legend fallback and accessible labels.
+The dashboard SHALL render a genre-distribution **pie chart** from `genre_distribution`, with a text legend and accessible labels.
 
 #### Scenario: Genre chart rendered (US-05 scenario 2)
 
 - **WHEN** `genre_distribution` contains multiple genres
-- **THEN** the dashboard renders one chart segment/bar per genre with its count
+- **THEN** the dashboard renders one pie slice per genre with its count in the legend
 
 #### Scenario: Consistent chart card container (KAN-23)
 
@@ -58,12 +58,12 @@ The dashboard SHALL render a genre-distribution chart from `genre_distribution`,
 
 ### Requirement: Format breakdown
 
-The dashboard SHALL render the format breakdown from `format_distribution` and highlight `predominant_format` when present.
+The dashboard SHALL render the format breakdown as a **pie chart** from `format_distribution` and highlight `predominant_format` in the legend when present.
 
 #### Scenario: Predominant format highlighted
 
 - **WHEN** the response has `predominant_format: "fisico"`
-- **THEN** the format breakdown indicates `fisico` as the predominant format
+- **THEN** the format pie legend indicates `fisico` as the predominant format
 
 #### Scenario: Format chart card alignment (KAN-23)
 
@@ -136,7 +136,7 @@ In year mode, loading, empty (`books_read: 0`), and error states SHALL behave li
 
 ### Requirement: Structured chart grid layout
 
-The Reading Stats dashboard SHALL render a chart section with **four pie-chart slots** and **two bar-chart slots** when period data is non-empty. Existing genre and format visualizations SHALL occupy the first two pie slots. Remaining slots SHALL display labeled placeholder cards until implemented in follow-up tickets (KAN-41, KAN-42).
+The Reading Stats dashboard SHALL render a chart section with **four pie-chart slots** and **two bar-chart slots** when period data is non-empty. All four pie slots SHALL render pie charts when distribution data exists. Bar slots SHALL display labeled placeholder cards until implemented in KAN-42.
 
 #### Scenario: Full chart grid visible
 
