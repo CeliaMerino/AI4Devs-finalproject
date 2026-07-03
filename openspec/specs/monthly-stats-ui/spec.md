@@ -136,7 +136,7 @@ In year mode, loading, empty (`books_read: 0`), and error states SHALL behave li
 
 ### Requirement: Structured chart grid layout
 
-The Reading Stats dashboard SHALL render a chart section with **four pie-chart slots** and **two bar-chart slots** when period data is non-empty. All four pie slots SHALL render pie charts when distribution data exists. Bar slots SHALL display labeled placeholder cards until implemented in KAN-42.
+The Reading Stats dashboard SHALL render a chart section with **four pie-chart slots** and **two bar-chart slots** when period data is non-empty. All four pie slots SHALL render pie charts when distribution data exists. Both bar slots SHALL render bar charts from the stats time-series breakdown fields.
 
 #### Scenario: Full chart grid visible
 
@@ -153,8 +153,13 @@ The Reading Stats dashboard SHALL render a chart section with **four pie-chart s
 - **WHEN** the viewport is narrow
 - **THEN** pie and bar slots stack without horizontal page overflow
 
+#### Scenario: Bar charts replace placeholders
+
+- **WHEN** time-series breakdown data is available
+- **THEN** the books and pages bar slots render bar charts with labeled axes instead of placeholder cards
+
 #### Scenario: Placeholder slot accessibility
 
-- **WHEN** a pie or bar slot has no chart implementation yet
+- **WHEN** a pie slot has no chart implementation yet
 - **THEN** the slot still exposes a titled card with an accessible name describing the upcoming chart type
 
