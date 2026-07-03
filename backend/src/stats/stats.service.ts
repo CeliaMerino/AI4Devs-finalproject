@@ -184,15 +184,32 @@ export class StatsService {
     }));
   }
 
+  private isPostgres(): boolean {
+    return this.readingRepo.manager.connection.options.type === 'postgres';
+  }
+
+  private monthBucketExpression(): string {
+    return this.isPostgres()
+      ? 'EXTRACT(MONTH FROM rr.finishedOn)'
+      : 'CAST(SUBSTR(rr.finishedOn, 6, 2) AS INTEGER)';
+  }
+
+  private yearBucketExpression(): string {
+    return this.isPostgres()
+      ? 'EXTRACT(YEAR FROM rr.finishedOn)'
+      : 'CAST(SUBSTR(rr.finishedOn, 1, 4) AS INTEGER)';
+  }
+
   private async monthlyBreakdown(
     userId: string,
     year: number,
   ): Promise<MonthBucketDto[]> {
     const { periodStart, periodEnd } = StatsService.yearBounds(year);
+    const monthExpr = this.monthBucketExpression();
     const rows = await this.readingRepo
       .createQueryBuilder('rr')
       .innerJoin(Book, 'b', 'b.id = rr.bookId')
-      .select("CAST(SUBSTR(rr.finishedOn, 6, 2) AS INTEGER)", 'bucket')
+      .select(monthExpr, 'bucket')
       .addSelect('COUNT(*)', 'booksRead')
       .addSelect('COALESCE(SUM(b.pageCount), 0)', 'pagesRead')
       .where('b.userId = :userId', { userId })
@@ -228,15 +245,16 @@ export class StatsService {
     userId: string,
     upToYear: number,
   ): Promise<YearBucketDto[]> {
+    const yearExpr = this.yearBucketExpression();
     const rows = await this.readingRepo
       .createQueryBuilder('rr')
       .innerJoin(Book, 'b', 'b.id = rr.bookId')
-      .select("CAST(SUBSTR(rr.finishedOn, 1, 4) AS INTEGER)", 'bucket')
+      .select(yearExpr, 'bucket')
       .addSelect('COUNT(*)', 'booksRead')
       .addSelect('COALESCE(SUM(b.pageCount), 0)', 'pagesRead')
       .where('b.userId = :userId', { userId })
       .andWhere('rr.status = :status', { status: 'leido' })
-      .andWhere("CAST(SUBSTR(rr.finishedOn, 1, 4) AS INTEGER) <= :upToYear", {
+      .andWhere(`${yearExpr} <= :upToYear`, {
         upToYear,
       })
       .groupBy('bucket')
