@@ -2,8 +2,8 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": "KAN-42",
-  "current_ticket": "KAN-39",
+  "last_completed": "KAN-39",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -219,13 +219,13 @@
       "error": null
     },
     "KAN-39": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-39-stats-cover-gallery",
       "branch": "feature/KAN-39-stats-cover-gallery",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/36",
       "pr_number": 36,
-      "archived_at": null,
+      "archived_at": "2026-07-03T09:15:00Z",
       "error": null
     }
   }
