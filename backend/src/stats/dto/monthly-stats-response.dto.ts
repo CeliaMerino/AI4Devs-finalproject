@@ -30,6 +30,14 @@ export interface YearBucketDto {
   pages_read: number;
 }
 
+export interface PeriodBookSummaryDto {
+  id: string;
+  title: string;
+  authors: string;
+  cover_image_url: string | null;
+  finished_on: string;
+}
+
 export interface MonthlyStatsResponseDto {
   year: number;
   month: number;
@@ -42,4 +50,5 @@ export interface MonthlyStatsResponseDto {
   audience_distribution: AudienceCountDto[];
   rating_distribution: RatingCountDto[];
   monthly_breakdown: MonthBucketDto[];
+  books_in_period: PeriodBookSummaryDto[];
 }

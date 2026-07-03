@@ -9,6 +9,7 @@ import type {
   GenreCountDto,
   MonthlyStatsResponseDto,
   MonthBucketDto,
+  PeriodBookSummaryDto,
   RatingCountDto,
   YearBucketDto,
 } from './dto/monthly-stats-response.dto';
@@ -34,6 +35,14 @@ interface TimeBucketRow {
   bucket: string | number | null;
   booksRead: string | number | null;
   pagesRead: string | number | null;
+}
+
+interface PeriodBookRow {
+  id: string;
+  title: string;
+  authors: string;
+  coverImageUrl: string | null;
+  finishedOn: string;
 }
 
 interface PeriodAggregate {
@@ -62,14 +71,18 @@ export class StatsService {
     month: number,
   ): Promise<MonthlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.monthBounds(year, month);
-    const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
-    const monthlyBreakdown = await this.monthlyBreakdown(userId, year);
+    const [aggregate, monthlyBreakdown, booksInPeriod] = await Promise.all([
+      this.aggregateStats(userId, periodStart, periodEnd),
+      this.monthlyBreakdown(userId, year),
+      this.booksInPeriod(userId, periodStart, periodEnd),
+    ]);
 
     return {
       year,
       month,
       ...aggregate,
       monthly_breakdown: monthlyBreakdown,
+      books_in_period: booksInPeriod,
     };
   }
 
@@ -78,13 +91,17 @@ export class StatsService {
     year: number,
   ): Promise<YearlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.yearBounds(year);
-    const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
-    const yearlyBreakdown = await this.yearlyBreakdown(userId, year);
+    const [aggregate, yearlyBreakdown, booksInPeriod] = await Promise.all([
+      this.aggregateStats(userId, periodStart, periodEnd),
+      this.yearlyBreakdown(userId, year),
+      this.booksInPeriod(userId, periodStart, periodEnd),
+    ]);
 
     return {
       year,
       ...aggregate,
       yearly_breakdown: yearlyBreakdown,
+      books_in_period: booksInPeriod,
     };
   }
 
@@ -181,6 +198,36 @@ export class StatsService {
     return rows.map((row) => ({
       rating: StatsService.roundAverage(row.key) ?? 0,
       count: StatsService.toInt(row.count),
+    }));
+  }
+
+  private async booksInPeriod(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<PeriodBookSummaryDto[]> {
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .select('b.id', 'id')
+      .addSelect('b.title', 'title')
+      .addSelect('b.authors', 'authors')
+      .addSelect('b.coverImageUrl', 'coverImageUrl')
+      .addSelect('rr.finishedOn', 'finishedOn')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .orderBy('rr.finishedOn', 'ASC')
+      .addOrderBy('b.title', 'ASC')
+      .getRawMany<PeriodBookRow>();
+
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      authors: row.authors,
+      cover_image_url: row.coverImageUrl ?? null,
+      finished_on: row.finishedOn,
     }));
   }
 

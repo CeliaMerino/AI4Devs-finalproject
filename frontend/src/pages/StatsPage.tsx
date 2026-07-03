@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getMonthlyStats, getYearlyStats } from '../api/client';
 import type { StatsResponse } from '../api/types';
+import { CoverGallery } from '../components/stats/CoverGallery';
 import { AudiencePieChart } from '../components/stats/AudiencePieChart';
 import { BooksBarChart } from '../components/stats/BooksBarChart';
 import { FormatPieChart } from '../components/stats/FormatPieChart';
@@ -15,6 +16,7 @@ import {
 import '../components/stats/StatsChartsGrid.css';
 import '../components/stats/PieChart.css';
 import '../components/stats/BarChart.css';
+import '../components/stats/CoverGallery.css';
 import { KpiCard } from '../components/KpiCard';
 import { PageHeader } from '../components/ui';
 import {
@@ -176,7 +178,8 @@ export function StatsPage() {
                   : 'No hay libros marcados como leídos en este mes.'}
               </p>
             ) : (
-              <StatsChartsGrid
+              <>
+                <StatsChartsGrid
                 periodScope={periodScope}
                 genreChart={
                   data.genre_distribution.length > 0 ? (
@@ -272,6 +275,13 @@ export function StatsPage() {
                   )
                 }
               />
+              {data.books_in_period.length > 0 && (
+                <CoverGallery
+                  books={data.books_in_period}
+                  periodScope={periodScope}
+                />
+              )}
+              </>
             )}
           </>
         )}
