@@ -8,7 +8,9 @@ import type {
   FormatCountDto,
   GenreCountDto,
   MonthlyStatsResponseDto,
+  MonthBucketDto,
   RatingCountDto,
+  YearBucketDto,
 } from './dto/monthly-stats-response.dto';
 import type { YearlyStatsResponseDto } from './dto/yearly-stats-response.dto';
 
@@ -26,6 +28,12 @@ interface AggregateRow {
 interface DistributionRow {
   key: string | null;
   count: string | number | null;
+}
+
+interface TimeBucketRow {
+  bucket: string | number | null;
+  booksRead: string | number | null;
+  pagesRead: string | number | null;
 }
 
 interface PeriodAggregate {
@@ -55,11 +63,13 @@ export class StatsService {
   ): Promise<MonthlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.monthBounds(year, month);
     const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
+    const monthlyBreakdown = await this.monthlyBreakdown(userId, year);
 
     return {
       year,
       month,
       ...aggregate,
+      monthly_breakdown: monthlyBreakdown,
     };
   }
 
@@ -69,10 +79,12 @@ export class StatsService {
   ): Promise<YearlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.yearBounds(year);
     const aggregate = await this.aggregateStats(userId, periodStart, periodEnd);
+    const yearlyBreakdown = await this.yearlyBreakdown(userId, year);
 
     return {
       year,
       ...aggregate,
+      yearly_breakdown: yearlyBreakdown,
     };
   }
 
@@ -170,6 +182,80 @@ export class StatsService {
       rating: StatsService.roundAverage(row.key) ?? 0,
       count: StatsService.toInt(row.count),
     }));
+  }
+
+  private async monthlyBreakdown(
+    userId: string,
+    year: number,
+  ): Promise<MonthBucketDto[]> {
+    const { periodStart, periodEnd } = StatsService.yearBounds(year);
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .select("CAST(SUBSTR(rr.finishedOn, 6, 2) AS INTEGER)", 'bucket')
+      .addSelect('COUNT(*)', 'booksRead')
+      .addSelect('COALESCE(SUM(b.pageCount), 0)', 'pagesRead')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .groupBy('bucket')
+      .orderBy('bucket', 'ASC')
+      .getRawMany<TimeBucketRow>();
+
+    const byMonth = new Map(
+      rows.map((row) => [
+        StatsService.toInt(row.bucket),
+        {
+          books_read: StatsService.toInt(row.booksRead),
+          pages_read: StatsService.toInt(row.pagesRead),
+        },
+      ]),
+    );
+
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = index + 1;
+      const bucket = byMonth.get(month);
+      return {
+        month,
+        books_read: bucket?.books_read ?? 0,
+        pages_read: bucket?.pages_read ?? 0,
+      };
+    });
+  }
+
+  private async yearlyBreakdown(
+    userId: string,
+    upToYear: number,
+  ): Promise<YearBucketDto[]> {
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .select("CAST(SUBSTR(rr.finishedOn, 1, 4) AS INTEGER)", 'bucket')
+      .addSelect('COUNT(*)', 'booksRead')
+      .addSelect('COALESCE(SUM(b.pageCount), 0)', 'pagesRead')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere("CAST(SUBSTR(rr.finishedOn, 1, 4) AS INTEGER) <= :upToYear", {
+        upToYear,
+      })
+      .groupBy('bucket')
+      .orderBy('bucket', 'ASC')
+      .getRawMany<TimeBucketRow>();
+
+    const buckets = rows
+      .map((row) => ({
+        year: StatsService.toInt(row.bucket),
+        books_read: StatsService.toInt(row.booksRead),
+        pages_read: StatsService.toInt(row.pagesRead),
+      }))
+      .filter((entry) => entry.year >= 1970);
+
+    if (buckets.length <= 15) {
+      return buckets;
+    }
+
+    return buckets.slice(-15);
   }
 
   static monthBounds(
