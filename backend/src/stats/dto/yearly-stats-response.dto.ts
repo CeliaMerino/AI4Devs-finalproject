@@ -1,4 +1,9 @@
-import type { FormatCountDto, GenreCountDto } from './monthly-stats-response.dto';
+import type {
+  AudienceCountDto,
+  FormatCountDto,
+  GenreCountDto,
+  RatingCountDto,
+} from './monthly-stats-response.dto';
 
 export interface YearlyStatsResponseDto {
   year: number;
@@ -8,4 +13,6 @@ export interface YearlyStatsResponseDto {
   genre_distribution: GenreCountDto[];
   format_distribution: FormatCountDto[];
   predominant_format: string | null;
+  audience_distribution: AudienceCountDto[];
+  rating_distribution: RatingCountDto[];
 }
