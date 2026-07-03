@@ -183,6 +183,14 @@ export interface YearBucket {
   pages_read: number;
 }
 
+export interface PeriodBookSummary {
+  id: string;
+  title: string;
+  authors: string;
+  cover_image_url: string | null;
+  finished_on: string;
+}
+
 export interface MonthlyStatsResponse {
   year: number;
   month: number;
@@ -195,6 +203,7 @@ export interface MonthlyStatsResponse {
   audience_distribution: AudienceCount[];
   rating_distribution: RatingCount[];
   monthly_breakdown: MonthBucket[];
+  books_in_period: PeriodBookSummary[];
 }
 
 export interface YearlyStatsResponse {
@@ -208,6 +217,7 @@ export interface YearlyStatsResponse {
   audience_distribution: AudienceCount[];
   rating_distribution: RatingCount[];
   yearly_breakdown: YearBucket[];
+  books_in_period: PeriodBookSummary[];
 }
 
 export type StatsResponse = MonthlyStatsResponse | YearlyStatsResponse;

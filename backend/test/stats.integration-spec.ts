@@ -197,6 +197,51 @@ describe('Stats API (integration)', () => {
     await app.close();
   });
 
+  it('returns books_in_period ordered by finished_on then title', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    expect(body.books_in_period).toHaveLength(4);
+    expect(body.books_in_period.map((book) => book.title)).toEqual([
+      'No genre D',
+      'Fantasy A',
+      'Sci-Fi C',
+      'Fantasy B',
+    ]);
+    expect(body.books_in_period.every((book) => book.authors === 'Test Author')).toBe(
+      true,
+    );
+    expect(
+      body.books_in_period.every((book) => typeof book.id === 'string'),
+    ).toBe(true);
+  });
+
+  it('returns empty books_in_period for an empty month', async () => {
+    const body = await fetchStats(token, 2025, 2);
+    expect(body.books_in_period).toEqual([]);
+  });
+
+  it('isolates books_in_period per user', async () => {
+    const otherToken = await login('stats-other-gallery@example.com');
+    await seedBook(otherToken, {
+      title: 'Other gallery book',
+      finishedOn: '2025-06-12',
+    });
+
+    const otherBody = await fetchStats(otherToken, 2025, 6);
+    expect(otherBody.books_in_period).toHaveLength(1);
+    expect(otherBody.books_in_period[0].title).toBe('Other gallery book');
+
+    const mineBody = await fetchStats(token, 2025, 6);
+    expect(mineBody.books_in_period).toHaveLength(4);
+  });
+
+  it('returns books_in_period for year mode', async () => {
+    const res = await getYearStats(token, 2025).expect(200);
+    const body = res.body as YearlyStatsResponseDto;
+    expect(body.books_in_period).toHaveLength(6);
+    expect(body.books_in_period[0].finished_on).toBe('2025-05-31');
+    expect(body.books_in_period.at(-1)?.finished_on).toBe('2025-07-01');
+  });
+
   it('aggregates books and pages read for the month (US-05 scenario 1)', async () => {
     const body = await fetchStats(token, 2025, 6);
     expect(body.year).toBe(2025);
@@ -343,6 +388,7 @@ describe('Stats API (integration)', () => {
       format_distribution: [],
       audience_distribution: [],
       rating_distribution: [],
+      books_in_period: [],
     });
     expect(body.monthly_breakdown).toHaveLength(12);
     const february = body.monthly_breakdown.find((entry) => entry.month === 2);
@@ -401,6 +447,7 @@ describe('Stats API (integration)', () => {
       format_distribution: [],
       audience_distribution: [],
       rating_distribution: [],
+      books_in_period: [],
     });
     const breakdown = (res.body as YearlyStatsResponseDto).yearly_breakdown;
     expect(breakdown.find((entry) => entry.year === 2024)).toBeUndefined();

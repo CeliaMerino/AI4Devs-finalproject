@@ -1220,6 +1220,26 @@ components:
         pages_read:
           type: integer
 
+    PeriodBookSummary:
+      type: object
+      required: [id, title, authors, cover_image_url, finished_on]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        authors:
+          type: string
+        cover_image_url:
+          oneOf:
+            - type: string
+            - type: 'null'
+        finished_on:
+          type: string
+          format: date
+          description: ISO date when the book was marked finished in the period.
+
     MonthlyStatsResponse:
       type: object
       required:
@@ -1234,6 +1254,7 @@ components:
         - audience_distribution
         - rating_distribution
         - monthly_breakdown
+        - books_in_period
       properties:
         year:
           type: integer
@@ -1274,6 +1295,11 @@ components:
           items:
             $ref: '#/components/schemas/MonthBucket'
           description: Twelve month buckets for the response year (bar charts in month mode).
+        books_in_period:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodBookSummary'
+          description: Books finished in the requested month, ordered by finished_on ascending.
 
     YearlyStatsResponse:
       type: object
@@ -1288,6 +1314,7 @@ components:
         - audience_distribution
         - rating_distribution
         - yearly_breakdown
+        - books_in_period
       properties:
         year:
           type: integer
@@ -1324,6 +1351,11 @@ components:
           items:
             $ref: '#/components/schemas/YearBucket'
           description: Books and pages per calendar year up to the selected year (bar charts in year mode).
+        books_in_period:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodBookSummary'
+          description: Books finished in the requested year, ordered by finished_on ascending.
 
     BookDuplicateError:
       type: object
