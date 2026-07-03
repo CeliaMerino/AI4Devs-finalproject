@@ -274,6 +274,25 @@ describe('Stats API (integration)', () => {
     expect(byGenre).toEqual({ Fantasy: 2, 'Sci-Fi': 1, unknown: 1 });
   });
 
+  it('returns monthly breakdown with twelve buckets for the year', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    expect(body.monthly_breakdown).toHaveLength(12);
+    const june = body.monthly_breakdown.find((entry) => entry.month === 6);
+    expect(june).toEqual({ month: 6, books_read: 4, pages_read: 1020 });
+    const february = body.monthly_breakdown.find((entry) => entry.month === 2);
+    expect(february).toEqual({ month: 2, books_read: 0, pages_read: 0 });
+  });
+
+  it('returns yearly breakdown with per-year totals', async () => {
+    const res = await getYearStats(token, 2025).expect(200);
+    const body = res.body as YearlyStatsResponseDto;
+    const byYear = Object.fromEntries(
+      body.yearly_breakdown.map((entry) => [entry.year, entry.books_read]),
+    );
+    expect(byYear[2025]).toBe(6);
+    expect(byYear[2023]).toBe(2);
+  });
+
   it('returns format distribution and predominant format', async () => {
     const body = await fetchStats(token, 2025, 6);
     const byFormat = Object.fromEntries(
@@ -325,6 +344,9 @@ describe('Stats API (integration)', () => {
       audience_distribution: [],
       rating_distribution: [],
     });
+    expect(body.monthly_breakdown).toHaveLength(12);
+    const february = body.monthly_breakdown.find((entry) => entry.month === 2);
+    expect(february).toEqual({ month: 2, books_read: 0, pages_read: 0 });
   });
 
   it('isolates statistics per user', async () => {
@@ -380,6 +402,8 @@ describe('Stats API (integration)', () => {
       audience_distribution: [],
       rating_distribution: [],
     });
+    const breakdown = (res.body as YearlyStatsResponseDto).yearly_breakdown;
+    expect(breakdown.find((entry) => entry.year === 2024)).toBeUndefined();
   });
 
   it('rejects year query without authentication', async () => {

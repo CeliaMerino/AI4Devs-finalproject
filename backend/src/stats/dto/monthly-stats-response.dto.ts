@@ -18,6 +18,18 @@ export interface RatingCountDto {
   count: number;
 }
 
+export interface MonthBucketDto {
+  month: number;
+  books_read: number;
+  pages_read: number;
+}
+
+export interface YearBucketDto {
+  year: number;
+  books_read: number;
+  pages_read: number;
+}
+
 export interface MonthlyStatsResponseDto {
   year: number;
   month: number;
@@ -29,4 +41,5 @@ export interface MonthlyStatsResponseDto {
   predominant_format: string | null;
   audience_distribution: AudienceCountDto[];
   rating_distribution: RatingCountDto[];
+  monthly_breakdown: MonthBucketDto[];
 }

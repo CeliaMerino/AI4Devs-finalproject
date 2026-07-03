@@ -2,7 +2,9 @@ import type {
   AudienceCountDto,
   FormatCountDto,
   GenreCountDto,
+  MonthBucketDto,
   RatingCountDto,
+  YearBucketDto,
 } from './monthly-stats-response.dto';
 
 export interface YearlyStatsResponseDto {
@@ -15,4 +17,5 @@ export interface YearlyStatsResponseDto {
   predominant_format: string | null;
   audience_distribution: AudienceCountDto[];
   rating_distribution: RatingCountDto[];
+  yearly_breakdown: YearBucketDto[];
 }

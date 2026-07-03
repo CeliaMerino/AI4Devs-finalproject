@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { getMonthlyStats, getYearlyStats } from '../api/client';
 import type { StatsResponse } from '../api/types';
 import { AudiencePieChart } from '../components/stats/AudiencePieChart';
+import { BooksBarChart } from '../components/stats/BooksBarChart';
 import { FormatPieChart } from '../components/stats/FormatPieChart';
 import { GenrePieChart } from '../components/stats/GenrePieChart';
+import { PagesBarChart } from '../components/stats/PagesBarChart';
 import { RatingPieChart } from '../components/stats/RatingPieChart';
 import {
   ChartSlotPlaceholder,
@@ -12,6 +14,7 @@ import {
 } from '../components/stats/StatsChartsGrid';
 import '../components/stats/StatsChartsGrid.css';
 import '../components/stats/PieChart.css';
+import '../components/stats/BarChart.css';
 import { KpiCard } from '../components/KpiCard';
 import { PageHeader } from '../components/ui';
 import {
@@ -225,26 +228,48 @@ export function StatsPage() {
                   )
                 }
                 booksBarChart={
-                  <ChartSlotPlaceholder
-                    title={
-                      period.mode === 'year'
-                        ? 'Libros por mes'
-                        : 'Libros en el mes'
-                    }
-                    subtitle="Evolución del volumen de lecturas."
-                    slotLabel="Gráfico de barras de libros"
-                  />
+                  period.mode === 'month' && 'monthly_breakdown' in data ? (
+                    <BooksBarChart
+                      mode="month"
+                      selectedYear={data.year}
+                      selectedMonth={data.month}
+                      monthlyBreakdown={data.monthly_breakdown}
+                    />
+                  ) : period.mode === 'year' && 'yearly_breakdown' in data ? (
+                    <BooksBarChart
+                      mode="year"
+                      selectedYear={data.year}
+                      yearlyBreakdown={data.yearly_breakdown}
+                    />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Libros por mes"
+                      subtitle="Evolución del volumen de lecturas."
+                      slotLabel="Gráfico de barras de libros"
+                    />
+                  )
                 }
                 pagesBarChart={
-                  <ChartSlotPlaceholder
-                    title={
-                      period.mode === 'year'
-                        ? 'Páginas por mes'
-                        : 'Páginas en el mes'
-                    }
-                    subtitle="Evolución de páginas leídas."
-                    slotLabel="Gráfico de barras de páginas"
-                  />
+                  period.mode === 'month' && 'monthly_breakdown' in data ? (
+                    <PagesBarChart
+                      mode="month"
+                      selectedYear={data.year}
+                      selectedMonth={data.month}
+                      monthlyBreakdown={data.monthly_breakdown}
+                    />
+                  ) : period.mode === 'year' && 'yearly_breakdown' in data ? (
+                    <PagesBarChart
+                      mode="year"
+                      selectedYear={data.year}
+                      yearlyBreakdown={data.yearly_breakdown}
+                    />
+                  ) : (
+                    <ChartSlotPlaceholder
+                      title="Páginas por mes"
+                      subtitle="Evolución de páginas leídas."
+                      slotLabel="Gráfico de barras de páginas"
+                    />
+                  )
                 }
               />
             )}

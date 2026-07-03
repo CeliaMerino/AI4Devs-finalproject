@@ -1196,6 +1196,30 @@ components:
         count:
           type: integer
 
+    MonthBucket:
+      type: object
+      required: [month, books_read, pages_read]
+      properties:
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        books_read:
+          type: integer
+        pages_read:
+          type: integer
+
+    YearBucket:
+      type: object
+      required: [year, books_read, pages_read]
+      properties:
+        year:
+          type: integer
+        books_read:
+          type: integer
+        pages_read:
+          type: integer
+
     MonthlyStatsResponse:
       type: object
       required:
@@ -1209,6 +1233,7 @@ components:
         - predominant_format
         - audience_distribution
         - rating_distribution
+        - monthly_breakdown
       properties:
         year:
           type: integer
@@ -1244,6 +1269,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RatingCount'
+        monthly_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthBucket'
+          description: Twelve month buckets for the response year (bar charts in month mode).
 
     YearlyStatsResponse:
       type: object
@@ -1257,6 +1287,7 @@ components:
         - predominant_format
         - audience_distribution
         - rating_distribution
+        - yearly_breakdown
       properties:
         year:
           type: integer
@@ -1288,6 +1319,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RatingCount'
+        yearly_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/YearBucket'
+          description: Books and pages per calendar year up to the selected year (bar charts in year mode).
 
     BookDuplicateError:
       type: object

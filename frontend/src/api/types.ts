@@ -171,6 +171,18 @@ export interface RatingCount {
   count: number;
 }
 
+export interface MonthBucket {
+  month: number;
+  books_read: number;
+  pages_read: number;
+}
+
+export interface YearBucket {
+  year: number;
+  books_read: number;
+  pages_read: number;
+}
+
 export interface MonthlyStatsResponse {
   year: number;
   month: number;
@@ -182,6 +194,7 @@ export interface MonthlyStatsResponse {
   predominant_format: string | null;
   audience_distribution: AudienceCount[];
   rating_distribution: RatingCount[];
+  monthly_breakdown: MonthBucket[];
 }
 
 export interface YearlyStatsResponse {
@@ -194,6 +207,7 @@ export interface YearlyStatsResponse {
   predominant_format: string | null;
   audience_distribution: AudienceCount[];
   rating_distribution: RatingCount[];
+  yearly_breakdown: YearBucket[];
 }
 
 export type StatsResponse = MonthlyStatsResponse | YearlyStatsResponse;
