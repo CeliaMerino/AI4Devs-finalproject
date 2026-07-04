@@ -6,6 +6,7 @@ import type {
   RatingCountDto,
   YearBucketDto,
 } from './monthly-stats-response.dto';
+import type { StatsInsightDto } from './stats-insight.dto';
 
 export interface YearlyStatsResponseDto {
   year: number;
@@ -19,4 +20,5 @@ export interface YearlyStatsResponseDto {
   rating_distribution: RatingCountDto[];
   yearly_breakdown: YearBucketDto[];
   books_in_period: PeriodBookSummaryDto[];
+  insights: StatsInsightDto[];
 }

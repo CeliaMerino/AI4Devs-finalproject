@@ -1,3 +1,5 @@
+import type { StatsInsightDto } from './stats-insight.dto';
+
 export interface GenreCountDto {
   genre: string;
   count: number;
@@ -51,4 +53,5 @@ export interface MonthlyStatsResponseDto {
   rating_distribution: RatingCountDto[];
   monthly_breakdown: MonthBucketDto[];
   books_in_period: PeriodBookSummaryDto[];
+  insights: StatsInsightDto[];
 }

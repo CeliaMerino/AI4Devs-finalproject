@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getMonthlyStats, getYearlyStats } from '../api/client';
 import type { StatsResponse } from '../api/types';
+import { InsightsList } from '../components/stats/InsightsList';
 import { CoverGallery } from '../components/stats/CoverGallery';
 import { AudiencePieChart } from '../components/stats/AudiencePieChart';
 import { BooksBarChart } from '../components/stats/BooksBarChart';
@@ -17,6 +18,7 @@ import '../components/stats/StatsChartsGrid.css';
 import '../components/stats/PieChart.css';
 import '../components/stats/BarChart.css';
 import '../components/stats/CoverGallery.css';
+import '../components/stats/InsightsList.css';
 import { KpiCard } from '../components/KpiCard';
 import { PageHeader } from '../components/ui';
 import {
@@ -179,6 +181,10 @@ export function StatsPage() {
               </p>
             ) : (
               <>
+                <InsightsList
+                  insights={data.insights}
+                  periodScope={periodScope}
+                />
                 <StatsChartsGrid
                 periodScope={periodScope}
                 genreChart={

@@ -242,6 +242,31 @@ describe('Stats API (integration)', () => {
     expect(body.books_in_period.at(-1)?.finished_on).toBe('2025-07-01');
   });
 
+  it('returns at least three insights for a populated month', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    expect(body.insights.length).toBeGreaterThanOrEqual(3);
+    expect(body.insights.some((insight) => insight.kind === 'volume_delta')).toBe(
+      true,
+    );
+    expect(body.insights.some((insight) => insight.kind === 'genre_trend')).toBe(
+      true,
+    );
+  });
+
+  it('returns volume delta with percentage increase vs previous month', async () => {
+    const body = await fetchStats(token, 2025, 6);
+    const volume = body.insights.find((insight) => insight.kind === 'volume_delta');
+    expect(volume).toBeDefined();
+    expect(volume?.data?.currentCount).toBe(4);
+    expect(volume?.data?.previousCount).toBe(1);
+    expect(volume?.data?.deltaPercent).toBe(300);
+  });
+
+  it('returns empty insights for an empty month', async () => {
+    const body = await fetchStats(token, 2025, 2);
+    expect(body.insights).toEqual([]);
+  });
+
   it('aggregates books and pages read for the month (US-05 scenario 1)', async () => {
     const body = await fetchStats(token, 2025, 6);
     expect(body.year).toBe(2025);
@@ -389,6 +414,7 @@ describe('Stats API (integration)', () => {
       audience_distribution: [],
       rating_distribution: [],
       books_in_period: [],
+      insights: [],
     });
     expect(body.monthly_breakdown).toHaveLength(12);
     const february = body.monthly_breakdown.find((entry) => entry.month === 2);
@@ -448,6 +474,7 @@ describe('Stats API (integration)', () => {
       audience_distribution: [],
       rating_distribution: [],
       books_in_period: [],
+      insights: [],
     });
     const breakdown = (res.body as YearlyStatsResponseDto).yearly_breakdown;
     expect(breakdown.find((entry) => entry.year === 2024)).toBeUndefined();

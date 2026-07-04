@@ -14,6 +14,14 @@ import type {
   YearBucketDto,
 } from './dto/monthly-stats-response.dto';
 import type { YearlyStatsResponseDto } from './dto/yearly-stats-response.dto';
+import {
+  generateStatsInsights,
+  monthBaselineLabel,
+  monthlyScopeKey,
+  previousMonth,
+  yearBaselineLabel,
+  yearlyScopeKey,
+} from './stats-insights';
 
 const UNKNOWN_BUCKET = 'unknown';
 
@@ -71,11 +79,37 @@ export class StatsService {
     month: number,
   ): Promise<MonthlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.monthBounds(year, month);
-    const [aggregate, monthlyBreakdown, booksInPeriod] = await Promise.all([
-      this.aggregateStats(userId, periodStart, periodEnd),
-      this.monthlyBreakdown(userId, year),
-      this.booksInPeriod(userId, periodStart, periodEnd),
-    ]);
+    const previous = previousMonth(year, month);
+    const previousBounds = StatsService.monthBounds(
+      previous.year,
+      previous.month,
+    );
+    const [aggregate, monthlyBreakdown, booksInPeriod, previousBooksRead] =
+      await Promise.all([
+        this.aggregateStats(userId, periodStart, periodEnd),
+        this.monthlyBreakdown(userId, year),
+        this.booksInPeriod(userId, periodStart, periodEnd),
+        this.countBooksInPeriod(
+          userId,
+          previousBounds.periodStart,
+          previousBounds.periodEnd,
+        ),
+      ]);
+
+    const insights = generateStatsInsights({
+      scopeKey: monthlyScopeKey(year, month),
+      periodMode: 'month',
+      year,
+      month,
+      booksRead: aggregate.books_read,
+      pagesRead: aggregate.pages_read,
+      averageRating: aggregate.average_rating,
+      genreDistribution: aggregate.genre_distribution,
+      formatDistribution: aggregate.format_distribution,
+      predominantFormat: aggregate.predominant_format,
+      previousBooksRead,
+      baselineLabel: monthBaselineLabel(previous.year, previous.month),
+    });
 
     return {
       year,
@@ -83,6 +117,7 @@ export class StatsService {
       ...aggregate,
       monthly_breakdown: monthlyBreakdown,
       books_in_period: booksInPeriod,
+      insights,
     };
   }
 
@@ -91,17 +126,40 @@ export class StatsService {
     year: number,
   ): Promise<YearlyStatsResponseDto> {
     const { periodStart, periodEnd } = StatsService.yearBounds(year);
-    const [aggregate, yearlyBreakdown, booksInPeriod] = await Promise.all([
-      this.aggregateStats(userId, periodStart, periodEnd),
-      this.yearlyBreakdown(userId, year),
-      this.booksInPeriod(userId, periodStart, periodEnd),
-    ]);
+    const previousYear = year - 1;
+    const previousBounds = StatsService.yearBounds(previousYear);
+    const [aggregate, yearlyBreakdown, booksInPeriod, previousBooksRead] =
+      await Promise.all([
+        this.aggregateStats(userId, periodStart, periodEnd),
+        this.yearlyBreakdown(userId, year),
+        this.booksInPeriod(userId, periodStart, periodEnd),
+        this.countBooksInPeriod(
+          userId,
+          previousBounds.periodStart,
+          previousBounds.periodEnd,
+        ),
+      ]);
+
+    const insights = generateStatsInsights({
+      scopeKey: yearlyScopeKey(year),
+      periodMode: 'year',
+      year,
+      booksRead: aggregate.books_read,
+      pagesRead: aggregate.pages_read,
+      averageRating: aggregate.average_rating,
+      genreDistribution: aggregate.genre_distribution,
+      formatDistribution: aggregate.format_distribution,
+      predominantFormat: aggregate.predominant_format,
+      previousBooksRead,
+      baselineLabel: yearBaselineLabel(previousYear),
+    });
 
     return {
       year,
       ...aggregate,
       yearly_breakdown: yearlyBreakdown,
       books_in_period: booksInPeriod,
+      insights,
     };
   }
 
@@ -229,6 +287,24 @@ export class StatsService {
       cover_image_url: row.coverImageUrl ?? null,
       finished_on: row.finishedOn,
     }));
+  }
+
+  private async countBooksInPeriod(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<number> {
+    const row = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .select('COUNT(*)', 'booksRead')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .getRawOne<AggregateRow>();
+
+    return StatsService.toInt(row?.booksRead);
   }
 
   private isPostgres(): boolean {
