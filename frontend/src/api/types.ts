@@ -191,6 +191,22 @@ export interface PeriodBookSummary {
   finished_on: string;
 }
 
+export type StatsInsightKind =
+  | 'volume_delta'
+  | 'genre_trend'
+  | 'format_mix'
+  | 'pages_milestone'
+  | 'rating_pattern'
+  | 'other';
+
+export interface StatsInsight {
+  id: string;
+  kind: StatsInsightKind;
+  title: string;
+  body: string;
+  data?: Record<string, string | number | boolean | null>;
+}
+
 export interface MonthlyStatsResponse {
   year: number;
   month: number;
@@ -204,6 +220,7 @@ export interface MonthlyStatsResponse {
   rating_distribution: RatingCount[];
   monthly_breakdown: MonthBucket[];
   books_in_period: PeriodBookSummary[];
+  insights: StatsInsight[];
 }
 
 export interface YearlyStatsResponse {
@@ -218,6 +235,7 @@ export interface YearlyStatsResponse {
   rating_distribution: RatingCount[];
   yearly_breakdown: YearBucket[];
   books_in_period: PeriodBookSummary[];
+  insights: StatsInsight[];
 }
 
 export type StatsResponse = MonthlyStatsResponse | YearlyStatsResponse;

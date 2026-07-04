@@ -1240,6 +1240,30 @@ components:
           format: date
           description: ISO date when the book was marked finished in the period.
 
+    StatsInsight:
+      type: object
+      required: [id, kind, title, body]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - volume_delta
+            - genre_trend
+            - format_mix
+            - pages_milestone
+            - rating_pattern
+            - other
+        title:
+          type: string
+        body:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+
     MonthlyStatsResponse:
       type: object
       required:
@@ -1255,6 +1279,7 @@ components:
         - rating_distribution
         - monthly_breakdown
         - books_in_period
+        - insights
       properties:
         year:
           type: integer
@@ -1300,6 +1325,11 @@ components:
           items:
             $ref: '#/components/schemas/PeriodBookSummary'
           description: Books finished in the requested month, ordered by finished_on ascending.
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsInsight'
+          description: Deterministic automatic insights for the period; empty when no qualifying books.
 
     YearlyStatsResponse:
       type: object
@@ -1315,6 +1345,7 @@ components:
         - rating_distribution
         - yearly_breakdown
         - books_in_period
+        - insights
       properties:
         year:
           type: integer
@@ -1356,6 +1387,11 @@ components:
           items:
             $ref: '#/components/schemas/PeriodBookSummary'
           description: Books finished in the requested year, ordered by finished_on ascending.
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsInsight'
+          description: Deterministic automatic insights for the period; empty when no qualifying books.
 
     BookDuplicateError:
       type: object
