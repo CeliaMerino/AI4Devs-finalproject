@@ -5,7 +5,7 @@ TBD - created by archiving change kan-15-monthly-stats-dashboard. Update Purpose
 ## Requirements
 ### Requirement: Get monthly reading statistics
 
-The system SHALL expose `GET /v1/stats/{year}/{month}` for the authenticated user, returning month-scoped aggregates computed from `reading_records` joined to `books`: `books_read`, `pages_read`, `average_rating`, `genre_distribution`, `format_distribution`, `predominant_format`, and `books_in_period`. A book qualifies for the month when its reading record has `status = 'leido'` and `finished_on` falls within `[YYYY-MM-01, next-month-01)`. No statistics table is persisted; results are computed on read (UC-07, KAN-15).
+The system SHALL expose `GET /v1/stats/{year}/{month}` for the authenticated user, returning month-scoped aggregates computed from `reading_records` joined to `books`: `books_read`, `pages_read`, `average_rating`, `genre_distribution`, `format_distribution`, `predominant_format`, `books_in_period`, and `insights`. A book qualifies for the month when its reading record has `status = 'leido'` and `finished_on` falls within `[YYYY-MM-01, next-month-01)`. No statistics table is persisted; results are computed on read (UC-07, KAN-15).
 
 #### Scenario: Books and pages read (US-05 scenario 1)
 
@@ -20,7 +20,7 @@ The system SHALL expose `GET /v1/stats/{year}/{month}` for the authenticated use
 #### Scenario: Empty month returns zeroed payload
 
 - **WHEN** the user has no qualifying book in the requested month
-- **THEN** the system responds with HTTP 200, `books_read: 0`, `pages_read: 0`, `average_rating: null`, `predominant_format: null`, empty distribution arrays, and `books_in_period: []`
+- **THEN** the system responds with HTTP 200, `books_read: 0`, `pages_read: 0`, `average_rating: null`, `predominant_format: null`, empty distribution arrays, `books_in_period: []`, and `insights: []`
 
 #### Scenario: Books outside month excluded
 
@@ -96,17 +96,17 @@ The system SHALL return `format_distribution` as an array of `{ format, count }`
 
 ### Requirement: Year-period statistics endpoint
 
-The system SHALL expose `GET /v1/stats?period=year&year=YYYY` for the authenticated user, returning year-scoped aggregates with the same fields as monthly stats except `month` is omitted, including `books_in_period`. A book qualifies when `status = 'leido'` and `finished_on` falls within `[YYYY-01-01, (YYYY+1)-01-01)`. Results are computed on read; empty years return zeroed totals and empty distributions with HTTP 200.
+The system SHALL expose `GET /v1/stats?period=year&year=YYYY` for the authenticated user, returning year-scoped aggregates with the same fields as monthly stats except `month` is omitted, including `insights`. A book qualifies when `status = 'leido'` and `finished_on` falls within `[YYYY-01-01, (YYYY+1)-01-01)`. Results are computed on read; empty years return zeroed totals and empty distributions with HTTP 200.
 
 #### Scenario: Year aggregates returned
 
 - **WHEN** the client requests `GET /v1/stats?period=year&year=2026` and the user finished 3 books in 2026
-- **THEN** the response includes `year: 2026`, `books_read: 3`, populated distributions, and `books_in_period` with 3 entries
+- **THEN** the response includes `year: 2026`, `books_read: 3`, populated distributions, `books_in_period` with 3 entries, and at least three `insights`
 
 #### Scenario: Empty year
 
 - **WHEN** the user has no qualifying books in the requested year
-- **THEN** the response returns `books_read: 0`, `pages_read: 0`, `average_rating: null`, empty distributions, `predominant_format: null`, and `books_in_period: []`
+- **THEN** the response returns `books_read: 0`, `pages_read: 0`, `average_rating: null`, empty distributions, `predominant_format: null`, `books_in_period: []`, and `insights: []`
 
 #### Scenario: Invalid year rejected
 
