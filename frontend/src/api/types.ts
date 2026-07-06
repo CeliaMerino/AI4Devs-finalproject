@@ -279,3 +279,17 @@ export interface ApiError {
   code?: string;
   existingBookId?: string;
 }
+
+export interface GoodreadsImportMeta {
+  total_rows: number;
+  parsed_rows: number;
+  skipped_rows: number;
+  mapped_rows: number;
+  imported_count: number;
+  skipped_duplicate_count: number;
+  skipped_invalid_count: number;
+}
+
+export interface GoodreadsImportResponse {
+  meta: GoodreadsImportMeta;
+}

@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-46",
-  "current_ticket": null,
+  "current_ticket": "KAN-47",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -269,10 +269,10 @@
       "error": null
     },
     "KAN-47": {
-      "status": "pending",
+      "status": "awaiting_merge",
       "failed_step": null,
-      "change_name": null,
-      "branch": null,
+      "change_name": "kan-47-goodreads-upload-ui",
+      "branch": "feature/KAN-47-goodreads-upload-ui",
       "pr_url": null,
       "pr_number": null,
       "archived_at": null,

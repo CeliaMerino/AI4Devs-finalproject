@@ -9,6 +9,7 @@ import type {
   CatalogSearchResponse,
   CreateBookPayload,
   EditionCoversResponse,
+  GoodreadsImportResponse,
   MonthlyStatsResponse,
   YearlyStatsResponse,
   MonthlyTbrResponse,
@@ -178,6 +179,35 @@ export async function getYearlyStats(year: number): Promise<YearlyStatsResponse>
     year: String(year),
   });
   return request(`/stats?${params.toString()}`);
+}
+
+export async function importGoodreadsCsv(
+  file: File,
+): Promise<GoodreadsImportResponse> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+
+  const headers: HeadersInit = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}/import/goodreads`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as ApiError;
+    if (res.status === 401) {
+      onUnauthorized?.();
+    }
+    throw new ApiRequestError(res.status, body);
+  }
+
+  return res.json() as Promise<GoodreadsImportResponse>;
 }
 
 export function catalogEditionToCreatePayload(
