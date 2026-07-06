@@ -1,6 +1,8 @@
 import {
   Controller,
+  Get,
   HttpCode,
+  Param,
   Post,
   Req,
   UploadedFile,
@@ -20,7 +22,7 @@ export class ImportController {
   constructor(private readonly importService: ImportService) {}
 
   @Post('goodreads')
-  @HttpCode(200)
+  @HttpCode(202)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -32,5 +34,13 @@ export class ImportController {
     @UploadedFile() file: UploadedCsvFile | undefined,
   ) {
     return this.importService.importGoodreadsUpload(req.user.userId, file);
+  }
+
+  @Get('jobs/:jobId')
+  getImportJob(
+    @Req() req: RequestWithUser,
+    @Param('jobId') jobId: string,
+  ) {
+    return this.importService.getImportJob(req.user.userId, jobId);
   }
 }

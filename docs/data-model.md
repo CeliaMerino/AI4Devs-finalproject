@@ -12,8 +12,9 @@ Data model for **Reading Analytics Platform**: personal reading library, progres
 | **MonthlyTbrList** | `monthly_tbr_lists` | One TBR list per user per calendar month |
 | **TbrEntry** | `tbr_entries` | Book on a monthly TBR with sort order and completion |
 | **AnnualReadingGoal** | `annual_reading_goals` | Numeric annual book target per user and year |
+| **ImportJob** | `import_jobs` | Background Goodreads CSV import + enrichment job state |
 
-All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, and annual goals.
+All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, annual goals, and import jobs.
 
 ## Entity definitions
 
@@ -134,6 +135,26 @@ Numeric target of books to read in a calendar year (UC-06). Progress is computed
 | updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
 
 **Uniqueness:** `UNIQUE (user_id, year)`.
+
+### ImportJob
+
+Background Goodreads import job (KAN-51). Progress exposed via `GET /v1/import/jobs/{jobId}`.
+
+| Field | Column | Type | Constraints |
+|-------|--------|------|-------------|
+| id | `id` | UUID | PK |
+| userId | `user_id` | UUID | FK → `users.id`, ON DELETE CASCADE |
+| status | `status` | VARCHAR(20) | NOT NULL; `queued` \| `parsing` \| `importing` \| `enriching` \| `completed` \| `failed` |
+| phase | `phase` | VARCHAR(20) | NOT NULL; same enum as status while running |
+| processedCount | `processed_count` | INTEGER | NOT NULL, default 0 |
+| totalCount | `total_count` | INTEGER | NOT NULL, default 0 |
+| csvContent | `csv_content` | TEXT | NOT NULL |
+| result | `result` | JSONB | NULL; full import payload when completed |
+| errorMessage | `error_message` | TEXT | NULL |
+| createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
+| updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
+
+**Index:** `idx_import_jobs_user_id` on `user_id`.
 
 ## Entity-relationship diagram
 

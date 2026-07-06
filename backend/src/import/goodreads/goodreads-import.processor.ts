@@ -8,8 +8,10 @@ import {
   buildGoodreadsDedupKeyFromLibraryBook,
 } from './goodreads-dedup.util';
 import { ImportCatalogEnrichmentService } from './import-catalog-enrichment.service';
+import type { GoodreadsImportProgressUpdate } from '../import-job.types';
 import type {
   GoodreadsEnrichmentFailedRow,
+  GoodreadsImportProcessOptions,
   GoodreadsImportSkippedRow,
   GoodreadsImportSummary,
   GoodreadsMappedRow,
@@ -30,6 +32,7 @@ export class GoodreadsImportProcessor {
     userId: string,
     mappedRows: GoodreadsMappedRow[],
     mappingWarnings: GoodreadsMappingWarning[],
+    options?: GoodreadsImportProcessOptions,
   ): Promise<GoodreadsImportSummary> {
     const existingByKey = await this.loadExistingDedupIndex(userId);
     const batchKeys = new Set<string>();
@@ -45,6 +48,18 @@ export class GoodreadsImportProcessor {
 
     let skipped_duplicate_count = 0;
     const skipped_invalid_count = mappingWarnings.length;
+    const total_count = mappedRows.length;
+    let processed_count = 0;
+
+    const reportProgress = async (
+      phase: GoodreadsImportProgressUpdate['phase'],
+    ) => {
+      await options?.onProgress?.({
+        phase,
+        processed_count,
+        total_count,
+      });
+    };
 
     for (const row of mappedRows) {
       const dedupKey = buildGoodreadsDedupKey(row.book);
@@ -55,6 +70,8 @@ export class GoodreadsImportProcessor {
           message: 'Duplicate row in the same CSV upload',
         });
         skipped_duplicate_count += 1;
+        processed_count += 1;
+        await reportProgress('importing');
         continue;
       }
 
@@ -68,10 +85,14 @@ export class GoodreadsImportProcessor {
           existing_book_id: existingBookId,
         });
         skipped_duplicate_count += 1;
+        processed_count += 1;
+        await reportProgress('importing');
         continue;
       }
 
+      await reportProgress('importing');
       const savedBook = await this.persistRow(userId, row);
+      await reportProgress('enriching');
       const enrichment = await this.catalogEnrichment.enrichBook(savedBook);
       if (enrichment.enrichment_failed) {
         enrichment_failed.push({
@@ -83,6 +104,8 @@ export class GoodreadsImportProcessor {
       }
       batchKeys.add(dedupKey);
       imported.push({ row_number: row.row_number, book_id: enrichment.book.id });
+      processed_count += 1;
+      await reportProgress('enriching');
     }
 
     return {

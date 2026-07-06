@@ -1,12 +1,14 @@
 import { ImportCatalogEnrichmentService } from './import-catalog-enrichment.service';
 import { Book } from '../../books/entities/book.entity';
 import { CatalogService } from '../../books/catalog/catalog.service';
+import { CatalogRateLimiter } from '../../books/catalog/catalog-rate-limiter.service';
 import { Repository } from 'typeorm';
 
 describe('ImportCatalogEnrichmentService', () => {
   let catalog: jest.Mocked<
     Pick<CatalogService, 'lookupByIsbn' | 'lookupByTitleAuthor'>
   >;
+  let rateLimiter: jest.Mocked<Pick<CatalogRateLimiter, 'throttle'>>;
   let booksRepo: jest.Mocked<Pick<Repository<Book>, 'save'>>;
   let service: ImportCatalogEnrichmentService;
 
@@ -27,9 +29,11 @@ describe('ImportCatalogEnrichmentService', () => {
       lookupByIsbn: jest.fn(),
       lookupByTitleAuthor: jest.fn(),
     };
+    rateLimiter = { throttle: jest.fn().mockResolvedValue(undefined) };
     booksRepo = { save: jest.fn(async (book) => book) };
     service = new ImportCatalogEnrichmentService(
       catalog as unknown as CatalogService,
+      rateLimiter as unknown as CatalogRateLimiter,
       booksRepo as unknown as Repository<Book>,
     );
   });
