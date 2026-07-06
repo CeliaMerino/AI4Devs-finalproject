@@ -4,14 +4,16 @@ import { Repository } from 'typeorm';
 import { Book } from '../../books/entities/book.entity';
 import { ReadingRecord } from '../../books/entities/reading-record.entity';
 import { GoodreadsImportProcessor } from './goodreads-import.processor';
-import { ImportIsbnEnrichmentService } from './import-isbn-enrichment.service';
+import { ImportCatalogEnrichmentService } from './import-catalog-enrichment.service';
 import type { GoodreadsMappedRow } from './goodreads-import.types';
 
 describe('GoodreadsImportProcessor', () => {
   let processor: GoodreadsImportProcessor;
   let booksRepo: jest.Mocked<Pick<Repository<Book>, 'find' | 'create' | 'save'>>;
   let readingRepo: jest.Mocked<Pick<Repository<ReadingRecord>, 'create' | 'save'>>;
-  let isbnEnrichment: jest.Mocked<Pick<ImportIsbnEnrichmentService, 'enrichBook'>>;
+  let catalogEnrichment: jest.Mocked<
+    Pick<ImportCatalogEnrichmentService, 'enrichBook'>
+  >;
 
   const sampleRow: GoodreadsMappedRow = {
     row_number: 2,
@@ -44,8 +46,11 @@ describe('GoodreadsImportProcessor', () => {
       create: jest.fn((value) => value as ReadingRecord),
       save: jest.fn(async (value) => value as ReadingRecord),
     };
-    isbnEnrichment = {
-      enrichBook: jest.fn(async (book) => book),
+    catalogEnrichment = {
+      enrichBook: jest.fn(async (book) => ({
+        book,
+        enrichment_failed: false,
+      })),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -53,7 +58,7 @@ describe('GoodreadsImportProcessor', () => {
         GoodreadsImportProcessor,
         { provide: getRepositoryToken(Book), useValue: booksRepo },
         { provide: getRepositoryToken(ReadingRecord), useValue: readingRepo },
-        { provide: ImportIsbnEnrichmentService, useValue: isbnEnrichment },
+        { provide: ImportCatalogEnrichmentService, useValue: catalogEnrichment },
       ],
     }).compile();
 
@@ -72,9 +77,29 @@ describe('GoodreadsImportProcessor', () => {
         progressPercent: '100.00',
       }),
     );
-    expect(isbnEnrichment.enrichBook).toHaveBeenCalledWith(
+    expect(catalogEnrichment.enrichBook).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'book-1' }),
     );
+    expect(result.enrichment_failed).toEqual([]);
+    expect(result.meta.enrichment_failed_count).toBe(0);
+  });
+
+  it('records enrichment failures from catalog enrichment', async () => {
+    catalogEnrichment.enrichBook.mockResolvedValue({
+      book: { id: 'book-1' } as Book,
+      enrichment_failed: true,
+    });
+
+    const result = await processor.processImport('user-1', [sampleRow], []);
+
+    expect(result.enrichment_failed).toEqual([
+      expect.objectContaining({
+        row_number: 2,
+        book_id: 'book-1',
+        code: 'ENRICHMENT_CATALOG_MISS',
+      }),
+    ]);
+    expect(result.meta.enrichment_failed_count).toBe(1);
   });
 
   it('skips rows that already exist in the library', async () => {

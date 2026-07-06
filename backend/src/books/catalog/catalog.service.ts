@@ -59,6 +59,36 @@ export class CatalogService {
       return null;
     }
 
+    return this.mergeProviderLookups(olEdition, gbEdition);
+  }
+
+  async lookupByTitleAuthor(
+    title: string,
+    authors: string,
+  ): Promise<CatalogIsbnLookupResult | null> {
+    const trimmedTitle = title.trim();
+    const trimmedAuthors = authors.trim();
+    if (!trimmedTitle || !trimmedAuthors) {
+      return null;
+    }
+
+    const query = `${trimmedTitle} ${trimmedAuthors}`;
+    const [olEdition, gbEdition] = await Promise.all([
+      this.searchProvider(this.openLibrary, query),
+      this.searchProvider(this.googleBooks, query),
+    ]);
+
+    return this.mergeProviderLookups(olEdition, gbEdition);
+  }
+
+  private mergeProviderLookups(
+    olEdition: CatalogEditionDto | null,
+    gbEdition: CatalogEditionDto | null,
+  ): CatalogIsbnLookupResult | null {
+    if (!olEdition && !gbEdition) {
+      return null;
+    }
+
     return {
       cover_image_url:
         olEdition?.cover_image_url ?? gbEdition?.cover_image_url ?? null,

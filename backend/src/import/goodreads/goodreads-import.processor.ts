@@ -7,8 +7,9 @@ import {
   buildGoodreadsDedupKey,
   buildGoodreadsDedupKeyFromLibraryBook,
 } from './goodreads-dedup.util';
-import { ImportIsbnEnrichmentService } from './import-isbn-enrichment.service';
+import { ImportCatalogEnrichmentService } from './import-catalog-enrichment.service';
 import type {
+  GoodreadsEnrichmentFailedRow,
   GoodreadsImportSkippedRow,
   GoodreadsImportSummary,
   GoodreadsMappedRow,
@@ -22,7 +23,7 @@ export class GoodreadsImportProcessor {
     private readonly booksRepo: Repository<Book>,
     @InjectRepository(ReadingRecord)
     private readonly readingRepo: Repository<ReadingRecord>,
-    private readonly isbnEnrichment: ImportIsbnEnrichmentService,
+    private readonly catalogEnrichment: ImportCatalogEnrichmentService,
   ) {}
 
   async processImport(
@@ -33,6 +34,7 @@ export class GoodreadsImportProcessor {
     const existingByKey = await this.loadExistingDedupIndex(userId);
     const batchKeys = new Set<string>();
     const imported: GoodreadsImportSummary['imported'] = [];
+    const enrichment_failed: GoodreadsEnrichmentFailedRow[] = [];
     const skipped_rows: GoodreadsImportSkippedRow[] = mappingWarnings.map(
       (warning) => ({
         row_number: warning.row_number,
@@ -70,18 +72,28 @@ export class GoodreadsImportProcessor {
       }
 
       const savedBook = await this.persistRow(userId, row);
-      await this.isbnEnrichment.enrichBook(savedBook);
+      const enrichment = await this.catalogEnrichment.enrichBook(savedBook);
+      if (enrichment.enrichment_failed) {
+        enrichment_failed.push({
+          row_number: row.row_number,
+          book_id: enrichment.book.id,
+          code: 'ENRICHMENT_CATALOG_MISS',
+          message: 'Catalog returned no metadata for enrichment',
+        });
+      }
       batchKeys.add(dedupKey);
-      imported.push({ row_number: row.row_number, book_id: savedBook.id });
+      imported.push({ row_number: row.row_number, book_id: enrichment.book.id });
     }
 
     return {
       imported,
       skipped_rows,
+      enrichment_failed,
       meta: {
         imported_count: imported.length,
         skipped_duplicate_count,
         skipped_invalid_count,
+        enrichment_failed_count: enrichment_failed.length,
       },
     };
   }

@@ -4,7 +4,7 @@ import { BooksModule } from '../books/books.module';
 import { Book } from '../books/entities/book.entity';
 import { ReadingRecord } from '../books/entities/reading-record.entity';
 import { GoodreadsImportProcessor } from './goodreads/goodreads-import.processor';
-import { ImportIsbnEnrichmentService } from './goodreads/import-isbn-enrichment.service';
+import { ImportCatalogEnrichmentService } from './goodreads/import-catalog-enrichment.service';
 import { ImportController } from './import.controller';
 import { ImportService } from './import.service';
 
@@ -17,7 +17,7 @@ import { ImportService } from './import.service';
   providers: [
     ImportService,
     GoodreadsImportProcessor,
-    ImportIsbnEnrichmentService,
+    ImportCatalogEnrichmentService,
   ],
   exports: [ImportService],
 })
