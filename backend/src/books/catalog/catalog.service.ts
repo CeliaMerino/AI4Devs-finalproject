@@ -8,6 +8,8 @@ import { retryWithBackoff } from './retry-with-backoff.util';
 import { GoogleBooksClient } from './google-books.client';
 import { OpenLibraryClient } from './open-library.client';
 
+const GENRE_LOOKUP_TIMEOUT_MS = 3000;
+
 @Injectable()
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name);
@@ -21,7 +23,10 @@ export class CatalogService {
     try {
       const olItems = await this.openLibrary.search(query, limit);
       if (olItems.length > 0) {
-        return { items: olItems, source: 'open_library' };
+        const items = await Promise.all(
+          olItems.map((item) => this.fillGenreFromGoogleBooksIfMissing(item)),
+        );
+        return { items, source: 'open_library' };
       }
       this.logger.debug(`Open Library returned 0 hits for "${query}"`);
     } catch (err) {
@@ -82,19 +87,78 @@ export class CatalogService {
     return this.mergeProviderLookups(olEdition, gbEdition);
   }
 
-  private mergeProviderLookups(
+  async resolveMissingGenreFromGoogleBooks(
+    edition: Pick<
+      CatalogEditionDto,
+      'genre' | 'isbn_13' | 'isbn_10' | 'data_source'
+    >,
+  ): Promise<string | null> {
+    const enriched = await this.fillGenreFromGoogleBooksIfMissing({
+      title: '',
+      authors: '',
+      cover_image_url: null,
+      page_count: null,
+      external_provider_id: '',
+      ...edition,
+    });
+    return enriched.genre;
+  }
+
+  private async mergeProviderLookups(
     olEdition: CatalogEditionDto | null,
     gbEdition: CatalogEditionDto | null,
-  ): CatalogIsbnLookupResult | null {
+  ): Promise<CatalogIsbnLookupResult | null> {
     if (!olEdition && !gbEdition) {
       return null;
+    }
+
+    let genre = gbEdition?.genre ?? olEdition?.genre ?? null;
+    if (!genre && olEdition) {
+      const enriched = await this.fillGenreFromGoogleBooksIfMissing(olEdition);
+      genre = enriched.genre;
     }
 
     return {
       cover_image_url:
         olEdition?.cover_image_url ?? gbEdition?.cover_image_url ?? null,
-      genre: gbEdition?.genre ?? null,
+      genre,
     };
+  }
+
+  private async fillGenreFromGoogleBooksIfMissing(
+    edition: CatalogEditionDto,
+  ): Promise<CatalogEditionDto> {
+    if (edition.data_source === 'google_books' || edition.genre) {
+      return edition;
+    }
+
+    const isbn = edition.isbn_13 ?? edition.isbn_10;
+    if (!isbn) {
+      return edition;
+    }
+
+    const genre = await this.lookupGenreFromGoogleBooks(isbn);
+    if (!genre) {
+      return edition;
+    }
+
+    return { ...edition, genre };
+  }
+
+  private async lookupGenreFromGoogleBooks(isbn: string): Promise<string | null> {
+    try {
+      const lookup = this.googleBooks.lookupGenreByIsbn(isbn);
+      const timeout = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
+      });
+      const genre = await Promise.race([lookup, timeout]);
+      return genre ?? null;
+    } catch (err) {
+      this.logger.warn(
+        `Google Books genre lookup failed for ISBN "${isbn}": ${err instanceof Error ? err.message : err}`,
+      );
+      return null;
+    }
   }
 
   private async searchProvider(

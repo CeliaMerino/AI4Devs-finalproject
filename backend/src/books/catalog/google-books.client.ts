@@ -101,4 +101,18 @@ export class GoogleBooksClient implements CatalogProvider {
     const fiction = categories.find((c) => /fiction/i.test(c));
     return fiction ?? categories[0];
   }
+
+  async lookupGenreByIsbn(isbn: string): Promise<string | null> {
+    const normalized = isbn.replace(/-/g, '').trim();
+    if (!normalized) {
+      return null;
+    }
+
+    try {
+      const items = await this.search(`isbn:${normalized}`, 1);
+      return items[0]?.genre ?? null;
+    } catch {
+      return null;
+    }
+  }
 }

@@ -134,3 +134,20 @@ phases:
         summary: "Import progress and final summary (US-15)"
         depends_on: [KAN-51]
         epic: KAN-48
+
+  - id: phase-7-genre-enrichment
+    name: "Phase 7 — Genre enrichment (KAN-53 epic)"
+    note: "KAN-53 epic; implement subtasks KAN-54 → KAN-55 → KAN-56 in order. Improves catalog genre for book creation and import (UC-01, UC-07)."
+    tickets:
+      - id: KAN-54
+        summary: "Backend — Google Books genre fallback when Open Library has no subject (Option B)"
+        epic: KAN-53
+        relates: [KAN-9]
+      - id: KAN-55
+        summary: "Backend — Open Library work subjects genre fallback (Option A)"
+        depends_on: [KAN-54]
+        epic: KAN-53
+      - id: KAN-56
+        summary: "Backend — normalize genre to closed taxonomy (Option C)"
+        depends_on: [KAN-55]
+        epic: KAN-53
