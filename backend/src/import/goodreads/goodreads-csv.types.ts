@@ -31,7 +31,7 @@ export interface GoodreadsParseWarning {
   message: string;
 }
 
-export interface GoodreadsParseResult {
+export interface GoodreadsParsedUploadResult {
   rows: GoodreadsParsedRow[];
   mapped_rows: GoodreadsMappedRow[];
   warnings: GoodreadsParseWarning[];

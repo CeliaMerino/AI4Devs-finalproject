@@ -36,3 +36,25 @@ export interface GoodreadsMappingResult {
   mapped_rows: GoodreadsMappedRow[];
   mapping_warnings: GoodreadsMappingWarning[];
 }
+
+export interface GoodreadsImportSkippedRow {
+  row_number: number;
+  code: string;
+  message: string;
+  existing_book_id?: string;
+}
+
+export interface GoodreadsImportedRow {
+  row_number: number;
+  book_id: string;
+}
+
+export interface GoodreadsImportSummary {
+  imported: GoodreadsImportedRow[];
+  skipped_rows: GoodreadsImportSkippedRow[];
+  meta: {
+    imported_count: number;
+    skipped_duplicate_count: number;
+    skipped_invalid_count: number;
+  };
+}
