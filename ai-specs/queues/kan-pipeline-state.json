@@ -303,8 +303,8 @@
       "failed_step": null,
       "change_name": "kan-51-import-background-jobs",
       "branch": "feature/KAN-51-import-background-jobs",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/44",
+      "pr_number": 44,
       "archived_at": null,
       "error": null
     },
