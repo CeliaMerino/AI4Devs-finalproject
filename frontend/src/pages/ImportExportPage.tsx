@@ -1,36 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useId, useRef, useState, type FormEvent } from 'react';
-import { importGoodreadsCsv } from '../api/client';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import {
+  importGoodreadsCsv,
+  pollImportJobUntilComplete,
+} from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
-import type { GoodreadsImportMeta, ImportJobStatusResponse } from '../api/types';
+import type {
+  GoodreadsImportResponse,
+  ImportJobStatusResponse,
+} from '../api/types';
+import { ImportProgress } from '../components/import/ImportProgress';
+import { ImportSummary } from '../components/import/ImportSummary';
 import { Button, Card, PageHeader } from '../components/ui';
-import { formatImportJobProgressLabel } from '../lib/goodreadsImportJob';
 import { validateGoodreadsCsvFile } from '../lib/goodreadsImport';
+import {
+  clearStoredImportJobId,
+  getStoredImportJobId,
+  storeImportJobId,
+} from '../lib/goodreadsImportJobStorage';
 import './ImportExportPage.css';
-
-function formatImportSummary(meta: GoodreadsImportMeta): string {
-  const parts = [
-    `${meta.imported_count} ${meta.imported_count === 1 ? 'libro importado' : 'libros importados'}`,
-  ];
-
-  if (meta.skipped_duplicate_count > 0) {
-    parts.push(
-      `${meta.skipped_duplicate_count} duplicados omitidos`,
-    );
-  }
-
-  if (meta.skipped_invalid_count > 0) {
-    parts.push(`${meta.skipped_invalid_count} filas descartadas`);
-  }
-
-  if ((meta.enrichment_failed_count ?? 0) > 0) {
-    parts.push(
-      `${meta.enrichment_failed_count} sin portada/género en catálogo`,
-    );
-  }
-
-  return `Importación completada: ${parts.join(', ')}.`;
-}
 
 export function ImportExportPage() {
   const queryClient = useQueryClient();
@@ -38,45 +26,77 @@ export function ImportExportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<GoodreadsImportResponse | null>(
+    null,
+  );
   const [jobProgress, setJobProgress] = useState<ImportJobStatusResponse | null>(
     null,
   );
+  const [resumeError, setResumeError] = useState<string | null>(null);
+
+  function invalidateLibraryCaches() {
+    void queryClient.invalidateQueries({ queryKey: ['books'] });
+    void queryClient.invalidateQueries({ queryKey: ['stats'] });
+    void queryClient.invalidateQueries({ queryKey: ['goals'] });
+  }
+
+  function handleImportSuccess(data: GoodreadsImportResponse) {
+    clearStoredImportJobId();
+    setJobProgress(null);
+    setImportResult(data);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    invalidateLibraryCaches();
+  }
+
+  function handleImportFailure() {
+    clearStoredImportJobId();
+    setJobProgress(null);
+  }
 
   const importMutation = useMutation({
     mutationFn: (file: File) =>
       importGoodreadsCsv(file, {
+        onJobAccepted: (jobId) => {
+          storeImportJobId(jobId);
+          setResumeError(null);
+        },
         onProgress: (status) => setJobProgress(status),
       }),
-    onSuccess: (data) => {
-      setJobProgress(null);
-      setSuccessMessage(formatImportSummary(data.meta));
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      void queryClient.invalidateQueries({ queryKey: ['books'] });
-      void queryClient.invalidateQueries({ queryKey: ['stats'] });
-      void queryClient.invalidateQueries({ queryKey: ['goals'] });
-    },
-    onError: () => {
-      setJobProgress(null);
+    onSuccess: handleImportSuccess,
+    onError: handleImportFailure,
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: (jobId: string) =>
+      pollImportJobUntilComplete(jobId, (status) => setJobProgress(status)),
+    onSuccess: handleImportSuccess,
+    onError: (error) => {
+      handleImportFailure();
+      setResumeError(messageFromUnknownError(error));
     },
   });
 
+  useEffect(() => {
+    const jobId = getStoredImportJobId();
+    if (!jobId) {
+      return;
+    }
+
+    setResumeError(null);
+    resumeMutation.mutate(jobId);
+  }, []);
+
+  const isImporting = importMutation.isPending || resumeMutation.isPending;
   const fileValidation = validateGoodreadsCsvFile(selectedFile);
-  const canSubmit = fileValidation.valid && !importMutation.isPending;
-  const progressLabel = jobProgress
-    ? formatImportJobProgressLabel(
-        jobProgress.phase,
-        jobProgress.processed_count,
-        jobProgress.total_count,
-      )
-    : 'Importando biblioteca…';
+  const canSubmit = fileValidation.valid && !isImporting;
 
   function handleFileChange(file: File | null) {
-    setSuccessMessage(null);
+    setImportResult(null);
     setJobProgress(null);
+    setResumeError(null);
     importMutation.reset();
     setSelectedFile(file);
 
@@ -91,17 +111,24 @@ export function ImportExportPage() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSuccessMessage(null);
+    setImportResult(null);
     setJobProgress(null);
+    setResumeError(null);
 
     const result = validateGoodreadsCsvFile(selectedFile);
     if (!result.valid || !selectedFile) {
-      setValidationError(result.valid ? 'Selecciona un archivo CSV de Goodreads.' : result.message);
+      setValidationError(
+        result.valid
+          ? 'Selecciona un archivo CSV de Goodreads.'
+          : result.message,
+      );
       return;
     }
 
     importMutation.mutate(selectedFile);
   }
+
+  const mutationError = importMutation.error ?? resumeMutation.error;
 
   return (
     <div className="import-export-page">
@@ -119,7 +146,7 @@ export function ImportExportPage() {
           <form
             className="goodreads-import-form"
             onSubmit={handleSubmit}
-            aria-busy={importMutation.isPending}
+            aria-busy={isImporting}
             noValidate
           >
             <div className="ui-field">
@@ -133,7 +160,7 @@ export function ImportExportPage() {
                 type="file"
                 name="file"
                 accept=".csv,text/csv"
-                disabled={importMutation.isPending}
+                disabled={isImporting}
                 onChange={(event) =>
                   handleFileChange(event.target.files?.[0] ?? null)
                 }
@@ -156,34 +183,41 @@ export function ImportExportPage() {
               </p>
             ) : null}
 
-            {importMutation.isPending ? (
+            {isImporting && jobProgress ? (
+              <ImportProgress
+                phase={jobProgress.phase}
+                processedCount={jobProgress.processed_count}
+                totalCount={jobProgress.total_count}
+              />
+            ) : null}
+
+            {isImporting && !jobProgress ? (
               <p
                 className="import-export-alert import-export-alert--progress"
                 role="status"
                 aria-live="polite"
               >
-                {progressLabel}
+                Preparando importación…
               </p>
             ) : null}
 
-            {importMutation.isError ? (
+            {mutationError ? (
               <p className="import-export-alert import-export-alert--error" role="alert">
-                {messageFromUnknownError(importMutation.error)}
+                {messageFromUnknownError(mutationError)}
               </p>
             ) : null}
 
-            {successMessage ? (
-              <p
-                className="import-export-alert import-export-alert--success"
-                role="status"
-              >
-                {successMessage}
+            {resumeError && !mutationError ? (
+              <p className="import-export-alert import-export-alert--error" role="alert">
+                {resumeError}
               </p>
             ) : null}
+
+            {importResult ? <ImportSummary result={importResult} /> : null}
 
             <div className="goodreads-import-form__actions">
               <Button type="submit" disabled={!canSubmit}>
-                {importMutation.isPending ? progressLabel : 'Importar biblioteca'}
+                {isImporting ? 'Importando…' : 'Importar biblioteca'}
               </Button>
             </div>
           </form>

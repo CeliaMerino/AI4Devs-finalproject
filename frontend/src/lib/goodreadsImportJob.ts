@@ -20,3 +20,13 @@ export function formatImportJobProgressLabel(
   }
   return `${label}…`;
 }
+
+export function importJobProgressPercent(
+  processedCount: number,
+  totalCount: number,
+): number {
+  if (totalCount <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((processedCount / totalCount) * 100));
+}
