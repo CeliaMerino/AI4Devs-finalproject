@@ -49,12 +49,21 @@ export interface GoodreadsImportedRow {
   book_id: string;
 }
 
+export interface GoodreadsEnrichmentFailedRow {
+  row_number: number;
+  book_id: string;
+  code: 'ENRICHMENT_CATALOG_MISS';
+  message: string;
+}
+
 export interface GoodreadsImportSummary {
   imported: GoodreadsImportedRow[];
   skipped_rows: GoodreadsImportSkippedRow[];
+  enrichment_failed: GoodreadsEnrichmentFailedRow[];
   meta: {
     imported_count: number;
     skipped_duplicate_count: number;
     skipped_invalid_count: number;
+    enrichment_failed_count: number;
   };
 }

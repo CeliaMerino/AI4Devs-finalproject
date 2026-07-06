@@ -1503,7 +1503,7 @@ components:
     GoodreadsParseResponse:
       type: object
       required:
-        [rows, mapped_rows, warnings, mapping_warnings, imported, skipped_rows, meta]
+        [rows, mapped_rows, warnings, mapping_warnings, imported, skipped_rows, enrichment_failed, meta]
       properties:
         rows:
           type: array
@@ -1529,6 +1529,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GoodreadsImportSkippedRow'
+        enrichment_failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsEnrichmentFailedRow'
         meta:
           type: object
           required:
@@ -1539,6 +1543,7 @@ components:
             - imported_count
             - skipped_duplicate_count
             - skipped_invalid_count
+            - enrichment_failed_count
           properties:
             total_rows:
               type: integer
@@ -1555,6 +1560,24 @@ components:
               type: integer
             skipped_invalid_count:
               type: integer
+            enrichment_failed_count:
+              type: integer
+              description: Imported rows where catalog enrichment returned no metadata
+
+    GoodreadsEnrichmentFailedRow:
+      type: object
+      required: [row_number, book_id, code, message]
+      properties:
+        row_number:
+          type: integer
+        book_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          enum: [ENRICHMENT_CATALOG_MISS]
+        message:
+          type: string
 
     GoodreadsImportBookDraft:
       type: object

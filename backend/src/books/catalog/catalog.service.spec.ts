@@ -134,4 +134,47 @@ describe('CatalogService', () => {
       expect(openLibrary.search).not.toHaveBeenCalled();
     });
   });
+
+  describe('lookupByTitleAuthor', () => {
+    it('queries both providers with title and author text', async () => {
+      openLibrary.search.mockResolvedValue([
+        {
+          ...olEdition,
+          cover_image_url: 'https://covers.openlibrary.org/b/id/3-L.jpg',
+        },
+      ]);
+      googleBooks.search.mockResolvedValue([
+        {
+          ...olEdition,
+          data_source: 'google_books',
+          external_provider_id: 'vol2',
+          genre: 'Fantasy',
+        },
+      ]);
+
+      const result = await service.lookupByTitleAuthor(
+        'The Hobbit',
+        'J.R.R. Tolkien',
+      );
+
+      expect(openLibrary.search).toHaveBeenCalledWith(
+        'The Hobbit J.R.R. Tolkien',
+        1,
+      );
+      expect(googleBooks.search).toHaveBeenCalledWith(
+        'The Hobbit J.R.R. Tolkien',
+        1,
+      );
+      expect(result).toEqual({
+        cover_image_url: 'https://covers.openlibrary.org/b/id/3-L.jpg',
+        genre: 'Fantasy',
+      });
+    });
+
+    it('returns null for blank title or author', async () => {
+      expect(await service.lookupByTitleAuthor('  ', 'Author')).toBeNull();
+      expect(await service.lookupByTitleAuthor('Title', '  ')).toBeNull();
+      expect(openLibrary.search).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -30,6 +30,7 @@ export class ImportService {
       ...parsed,
       imported: importResult.imported,
       skipped_rows: importResult.skipped_rows,
+      enrichment_failed: importResult.enrichment_failed,
       meta: {
         ...parsed.meta,
         ...importResult.meta,
