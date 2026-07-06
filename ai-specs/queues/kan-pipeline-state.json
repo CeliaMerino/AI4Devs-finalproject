@@ -2,8 +2,8 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": "KAN-47",
-  "current_ticket": "KAN-49",
+  "last_completed": "KAN-49",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -279,13 +279,13 @@
       "error": null
     },
     "KAN-49": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-49-import-isbn-enrichment",
       "branch": "feature/KAN-49-import-isbn-enrichment",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/42",
       "pr_number": 42,
-      "archived_at": null,
+      "archived_at": "2026-07-06T16:52:00Z",
       "error": null
     },
     "KAN-50": {
