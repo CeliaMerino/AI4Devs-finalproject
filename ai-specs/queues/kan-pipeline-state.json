@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-51",
-  "current_ticket": null,
+  "current_ticket": "KAN-52",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -309,10 +309,10 @@
       "error": null
     },
     "KAN-52": {
-      "status": "pending",
+      "status": "awaiting_merge",
       "failed_step": null,
-      "change_name": null,
-      "branch": null,
+      "change_name": "kan-52-import-progress-summary",
+      "branch": "feature/KAN-52-import-progress-summary",
       "pr_url": null,
       "pr_number": null,
       "archived_at": null,
