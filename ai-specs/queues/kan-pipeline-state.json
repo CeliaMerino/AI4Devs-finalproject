@@ -243,8 +243,8 @@
       "failed_step": null,
       "change_name": "kan-44-goodreads-csv-parser",
       "branch": "feature/KAN-44-goodreads-csv-parser",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/38",
+      "pr_number": 38,
       "archived_at": null,
       "error": null
     },
