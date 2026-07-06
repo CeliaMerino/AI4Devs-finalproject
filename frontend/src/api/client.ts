@@ -10,6 +10,8 @@ import type {
   CreateBookPayload,
   EditionCoversResponse,
   GoodreadsImportResponse,
+  ImportJobAcceptedResponse,
+  ImportJobStatusResponse,
   MonthlyStatsResponse,
   YearlyStatsResponse,
   MonthlyTbrResponse,
@@ -181,8 +183,56 @@ export async function getYearlyStats(year: number): Promise<YearlyStatsResponse>
   return request(`/stats?${params.toString()}`);
 }
 
+export async function getImportJob(
+  jobId: string,
+): Promise<ImportJobStatusResponse> {
+  return request<ImportJobStatusResponse>(`/import/jobs/${jobId}`);
+}
+
+const IMPORT_JOB_POLL_MS = 1000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function pollImportJobUntilComplete(
+  jobId: string,
+  onProgress?: (status: ImportJobStatusResponse) => void,
+): Promise<GoodreadsImportResponse> {
+  for (;;) {
+    const status = await getImportJob(jobId);
+    onProgress?.(status);
+
+    if (status.status === 'completed') {
+      if (!status.result?.meta) {
+        throw new ApiRequestError(500, {
+          statusCode: 500,
+          message: 'Import job completed without a result payload',
+        });
+      }
+      return status.result;
+    }
+
+    if (status.status === 'failed') {
+      throw new ApiRequestError(500, {
+        statusCode: 500,
+        message: status.error_message ?? 'Import job failed',
+      });
+    }
+
+    await sleep(IMPORT_JOB_POLL_MS);
+  }
+}
+
+export interface ImportGoodreadsCsvOptions {
+  onProgress?: (status: ImportJobStatusResponse) => void;
+}
+
 export async function importGoodreadsCsv(
   file: File,
+  options?: ImportGoodreadsCsvOptions,
 ): Promise<GoodreadsImportResponse> {
   const token = getToken();
   const formData = new FormData();
@@ -205,6 +255,11 @@ export async function importGoodreadsCsv(
       onUnauthorized?.();
     }
     throw new ApiRequestError(res.status, body);
+  }
+
+  if (res.status === 202) {
+    const accepted = (await res.json()) as ImportJobAcceptedResponse;
+    return pollImportJobUntilComplete(accepted.job_id, options?.onProgress);
   }
 
   return res.json() as Promise<GoodreadsImportResponse>;
