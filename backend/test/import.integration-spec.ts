@@ -18,6 +18,11 @@ const fixturePath = join(
   'fixtures',
   'goodreads_library_export.csv',
 );
+const minFixturePath = join(
+  __dirname,
+  'fixtures',
+  'goodreads_library_export.min.csv',
+);
 
 describe('Import API (integration)', () => {
   let app: INestApplication<App>;
@@ -71,13 +76,13 @@ describe('Import API (integration)', () => {
       meta: { parsed_rows: number };
     };
 
-    expect(body.meta.parsed_rows).toBe(6);
-    expect(body.rows[0]?.title).toBe('The Hobbit');
-    expect(body.rows[0]?.isbn13).toBe('9780618640157');
+    expect(body.meta.parsed_rows).toBe(1167);
+    expect(body.rows[0]?.title).toBe('Hacia mareas malditas');
+    expect(body.rows[0]?.isbn13).toBe('9788427052918');
   });
 
   it('requires authentication', async () => {
-    const csv = readFileSync(fixturePath);
+    const csv = readFileSync(minFixturePath);
     await request(app.getHttpServer())
       .post('/v1/import/goodreads')
       .attach('file', csv, 'goodreads_library_export.csv')

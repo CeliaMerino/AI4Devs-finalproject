@@ -1,4 +1,4 @@
-/** Standard Goodreads library export column names (case-sensitive). */
+/** Known Goodreads library export columns (case-sensitive). */
 export const GOODREADS_CSV_HEADERS = [
   'Book Id',
   'Title',
@@ -8,7 +8,6 @@ export const GOODREADS_CSV_HEADERS = [
   'ISBN',
   'ISBN13',
   'My Rating',
-  'Average Rating',
   'Publisher',
   'Binding',
   'Number of Pages',
@@ -26,7 +25,12 @@ export const GOODREADS_CSV_HEADERS = [
   'Owned Copies',
 ] as const;
 
-export type GoodreadsCsvHeader = (typeof GOODREADS_CSV_HEADERS)[number];
+/** Present in some exports but omitted in others (e.g. current Goodreads library CSV). */
+export const GOODREADS_OPTIONAL_HEADERS = ['Average Rating'] as const;
+
+export type GoodreadsCsvHeader =
+  | (typeof GOODREADS_CSV_HEADERS)[number]
+  | (typeof GOODREADS_OPTIONAL_HEADERS)[number];
 
 export const GOODREADS_REQUIRED_HEADERS: GoodreadsCsvHeader[] = [
   'Book Id',
