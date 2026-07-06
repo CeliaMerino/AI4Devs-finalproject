@@ -243,27 +243,30 @@ export class BooksService {
     }
 
     if (dto.data_source === 'open_library' && dto.external_provider_id) {
-      const enriched = await this.openLibraryEnrichment.enrichEdition({
-        title: dto.title,
-        authors: dto.authors,
-        cover_image_url: dto.cover_image_url ?? null,
-        page_count,
-        genre,
-        isbn_13: dto.isbn_13 ?? null,
-        isbn_10: dto.isbn_10 ?? null,
-        data_source: 'open_library',
-        external_provider_id: dto.external_provider_id,
-      });
-      genre = genre ?? enriched.genre;
+      const enriched = await this.openLibraryEnrichment.enrichEdition(
+        {
+          title: dto.title,
+          authors: dto.authors,
+          cover_image_url: dto.cover_image_url ?? null,
+          page_count,
+          genre,
+          isbn_13: dto.isbn_13 ?? null,
+          isbn_10: dto.isbn_10 ?? null,
+          data_source: 'open_library',
+          external_provider_id: dto.external_provider_id,
+        },
+        { resolveGenre: false },
+      );
       page_count = page_count ?? enriched.page_count;
     }
 
     if (!genre && dto.data_source === 'open_library') {
-      genre = await this.catalogService.resolveMissingGenreFromGoogleBooks({
+      genre = await this.catalogService.resolveMissingGenre({
         genre,
         isbn_13: dto.isbn_13 ?? null,
         isbn_10: dto.isbn_10 ?? null,
         data_source: 'open_library',
+        external_provider_id: dto.external_provider_id ?? '',
       });
     }
 

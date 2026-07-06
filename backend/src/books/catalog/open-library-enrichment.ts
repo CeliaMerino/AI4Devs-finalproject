@@ -34,6 +34,7 @@ export interface OlEditionEntry {
   number_of_pages?: number;
   subjects?: string[];
   series?: string[];
+  works?: { key: string }[];
 }
 
 export interface OlWorkDetail {
