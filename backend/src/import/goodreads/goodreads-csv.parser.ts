@@ -6,9 +6,8 @@ import {
 } from './goodreads-csv.constants';
 import { mapGoodreadsRows } from './goodreads-row.mapper';
 import type {
-  GoodreadsParseResult,
   GoodreadsParseWarning,
-  GoodreadsParsedRow,
+  GoodreadsParsedUploadResult,
 } from './goodreads-csv.types';
 
 const UTF8_BOM = '\uFEFF';
@@ -111,7 +110,7 @@ function toParsedRow(
   };
 }
 
-export function parseGoodreadsCsv(content: string): GoodreadsParseResult {
+export function parseGoodreadsCsv(content: string): GoodreadsParsedUploadResult {
   const normalized = content.startsWith(UTF8_BOM)
     ? content.slice(UTF8_BOM.length)
     : content;

@@ -495,9 +495,9 @@ paths:
       summary: Parse Goodreads library CSV export
       description: >-
         Accepts a multipart CSV file (`file`) from Goodreads library export.
-        Parses UTF-8 CSV, cleans ISBN wrappers, returns normalized rows and
-        mapped `book` + `reading_record` drafts per US-13 rules (KAN-44/45).
-        Does not persist books yet.
+        Parses UTF-8 CSV, cleans ISBN wrappers, maps rows to import drafts,
+        validates and dedupes against the user's library, persists new books,
+        and returns parse/mapping warnings plus import summary (KAN-44–46).
       tags: [Import]
       security:
         - bearerAuth: []
@@ -1502,7 +1502,8 @@ components:
 
     GoodreadsParseResponse:
       type: object
-      required: [rows, mapped_rows, warnings, mapping_warnings, meta]
+      required:
+        [rows, mapped_rows, warnings, mapping_warnings, imported, skipped_rows, meta]
       properties:
         rows:
           type: array
@@ -1520,9 +1521,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GoodreadsMappingWarning'
+        imported:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsImportedRow'
+        skipped_rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsImportSkippedRow'
         meta:
           type: object
-          required: [total_rows, parsed_rows, skipped_rows, mapped_rows]
+          required:
+            - total_rows
+            - parsed_rows
+            - skipped_rows
+            - mapped_rows
+            - imported_count
+            - skipped_duplicate_count
+            - skipped_invalid_count
           properties:
             total_rows:
               type: integer
@@ -1530,7 +1546,14 @@ components:
               type: integer
             skipped_rows:
               type: integer
+              description: CSV rows skipped during parse (column mismatch)
             mapped_rows:
+              type: integer
+            imported_count:
+              type: integer
+            skipped_duplicate_count:
+              type: integer
+            skipped_invalid_count:
               type: integer
 
     GoodreadsImportBookDraft:
@@ -1613,6 +1636,32 @@ components:
           type: string
         message:
           type: string
+
+    GoodreadsImportedRow:
+      type: object
+      required: [row_number, book_id]
+      properties:
+        row_number:
+          type: integer
+        book_id:
+          type: string
+          format: uuid
+
+    GoodreadsImportSkippedRow:
+      type: object
+      required: [row_number, code, message]
+      properties:
+        row_number:
+          type: integer
+        code:
+          type: string
+        message:
+          type: string
+        existing_book_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: 'null'
 
     BookDuplicateError:
       type: object

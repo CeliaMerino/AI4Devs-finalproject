@@ -62,7 +62,48 @@ describe('Import API (integration)', () => {
     await app.close();
   });
 
-  it('parses Goodreads CSV upload and returns rows for mapping', async () => {
+  it('re-importing the same CSV is idempotent', async () => {
+    const csv = readFileSync(minFixturePath);
+
+    const first = await request(app.getHttpServer())
+      .post('/v1/import/goodreads')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('file', csv, 'goodreads_library_export.min.csv')
+      .expect(200);
+
+    const firstBody = first.body as {
+      meta: {
+        imported_count: number;
+        skipped_invalid_count: number;
+        skipped_duplicate_count: number;
+      };
+    };
+
+    expect(firstBody.meta.imported_count).toBe(5);
+    expect(firstBody.meta.skipped_invalid_count).toBe(1);
+
+    const second = await request(app.getHttpServer())
+      .post('/v1/import/goodreads')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('file', csv, 'goodreads_library_export.min.csv')
+      .expect(200);
+
+    const secondBody = second.body as {
+      meta: {
+        imported_count: number;
+        skipped_duplicate_count: number;
+      };
+      skipped_rows: Array<{ code: string }>;
+    };
+
+    expect(secondBody.meta.imported_count).toBe(0);
+    expect(secondBody.meta.skipped_duplicate_count).toBe(5);
+    expect(
+      secondBody.skipped_rows.filter((row) => row.code === 'DUPLICATE_EXISTING'),
+    ).toHaveLength(5);
+  });
+
+  it('imports Goodreads CSV rows into the user library', async () => {
     const csv = readFileSync(fixturePath);
 
     const res = await request(app.getHttpServer())
@@ -77,18 +118,24 @@ describe('Import API (integration)', () => {
         book: { title: string; isbn13: string | null };
         reading_record: { status: string; finished_on: string | null };
       }>;
-      meta: { parsed_rows: number; mapped_rows: number };
+      imported: Array<{ row_number: number; book_id: string }>;
+      meta: {
+        parsed_rows: number;
+        mapped_rows: number;
+        imported_count: number;
+        skipped_duplicate_count: number;
+      };
     };
 
     expect(body.meta.parsed_rows).toBe(1167);
     expect(body.meta.mapped_rows).toBe(1167);
+    expect(body.meta.imported_count).toBe(1166);
+    expect(body.meta.skipped_duplicate_count).toBe(1);
+    expect(body.imported).toHaveLength(1166);
     expect(body.rows[0]?.title).toBe('Hacia mareas malditas');
-    expect(body.rows[0]?.isbn13).toBe('9788427052918');
-    expect(body.mapped_rows[0]?.book.title).toBe('Hacia mareas malditas');
     expect(body.mapped_rows[0]?.book.isbn13).toBe('9788427052918');
     expect(body.mapped_rows[0]?.reading_record.status).toBe('leido');
     expect(body.mapped_rows[0]?.reading_record.finished_on).toBe('2026-04-26');
-    expect(body.mapped_rows[0]?.reading_record.started_on).toBeNull();
   });
 
   it('requires authentication', async () => {

@@ -28,9 +28,9 @@ export class ImportController {
     }),
   )
   parseGoodreadsCsv(
-    @Req() _req: RequestWithUser,
+    @Req() req: RequestWithUser,
     @UploadedFile() file: UploadedCsvFile | undefined,
   ) {
-    return this.importService.parseGoodreadsUpload(file);
+    return this.importService.importGoodreadsUpload(req.user.userId, file);
   }
 }

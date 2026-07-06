@@ -4,16 +4,40 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { parseGoodreadsCsv } from './goodreads/goodreads-csv.parser';
-import type { GoodreadsParseResult } from './goodreads/goodreads-csv.types';
-import type { UploadedCsvFile } from './import.types';
+import { GoodreadsImportProcessor } from './goodreads/goodreads-import.processor';
+import type { GoodreadsImportResult, UploadedCsvFile } from './import.types';
 
 const MAX_GOODREADS_CSV_BYTES = 10 * 1024 * 1024;
 
 @Injectable()
 export class ImportService {
-  parseGoodreadsUpload(
+  constructor(
+    private readonly goodreadsImportProcessor: GoodreadsImportProcessor,
+  ) {}
+
+  async importGoodreadsUpload(
+    userId: string,
     file: UploadedCsvFile | undefined,
-  ): GoodreadsParseResult {
+  ): Promise<GoodreadsImportResult> {
+    const parsed = this.parseGoodreadsUpload(file);
+    const importResult = await this.goodreadsImportProcessor.processImport(
+      userId,
+      parsed.mapped_rows,
+      parsed.mapping_warnings,
+    );
+
+    return {
+      ...parsed,
+      imported: importResult.imported,
+      skipped_rows: importResult.skipped_rows,
+      meta: {
+        ...parsed.meta,
+        ...importResult.meta,
+      },
+    };
+  }
+
+  parseGoodreadsUpload(file: UploadedCsvFile | undefined) {
     if (!file) {
       throw new BadRequestException('CSV file is required (field name: file)');
     }
