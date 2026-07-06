@@ -71,4 +71,67 @@ describe('CatalogService', () => {
     expect(result.source).toBe('none');
     expect(result.items).toEqual([]);
   });
+
+  describe('lookupByIsbn', () => {
+    it('prefers Open Library cover and uses Google Books genre', async () => {
+      openLibrary.search.mockResolvedValue([
+        {
+          ...olEdition,
+          cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+        },
+      ]);
+      googleBooks.search.mockResolvedValue([
+        {
+          ...olEdition,
+          data_source: 'google_books',
+          external_provider_id: 'vol1',
+          genre: 'Science Fiction',
+          cover_image_url: 'https://books.google.com/cover.jpg',
+        },
+      ]);
+
+      const result = await service.lookupByIsbn('978-0618640157');
+
+      expect(openLibrary.search).toHaveBeenCalledWith('isbn:9780618640157', 1);
+      expect(googleBooks.search).toHaveBeenCalledWith('isbn:9780618640157', 1);
+      expect(result).toEqual({
+        cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+        genre: 'Science Fiction',
+      });
+    });
+
+    it('falls back to Google Books cover when Open Library has none', async () => {
+      openLibrary.search.mockResolvedValue([
+        { ...olEdition, cover_image_url: null },
+      ]);
+      googleBooks.search.mockResolvedValue([
+        {
+          ...olEdition,
+          data_source: 'google_books',
+          external_provider_id: 'vol1',
+          cover_image_url: 'https://books.google.com/cover.jpg',
+        },
+      ]);
+
+      const result = await service.lookupByIsbn('0618640150');
+
+      expect(result?.cover_image_url).toBe('https://books.google.com/cover.jpg');
+    });
+
+    it('returns null when both providers miss', async () => {
+      openLibrary.search.mockResolvedValue([]);
+      googleBooks.search.mockResolvedValue([]);
+
+      const result = await service.lookupByIsbn('0000000000');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for blank ISBN', async () => {
+      const result = await service.lookupByIsbn('  ');
+
+      expect(result).toBeNull();
+      expect(openLibrary.search).not.toHaveBeenCalled();
+    });
+  });
 });

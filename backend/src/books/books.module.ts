@@ -37,6 +37,6 @@ import { ReadingRecord } from './entities/reading-record.entity';
     OpenLibraryClient,
     GoogleBooksClient,
   ],
-  exports: [BooksService],
+  exports: [BooksService, CatalogService],
 })
 export class BooksModule {}

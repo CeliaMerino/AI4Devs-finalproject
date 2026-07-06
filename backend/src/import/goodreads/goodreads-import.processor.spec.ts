@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { Book } from '../../books/entities/book.entity';
 import { ReadingRecord } from '../../books/entities/reading-record.entity';
 import { GoodreadsImportProcessor } from './goodreads-import.processor';
+import { ImportIsbnEnrichmentService } from './import-isbn-enrichment.service';
 import type { GoodreadsMappedRow } from './goodreads-import.types';
 
 describe('GoodreadsImportProcessor', () => {
   let processor: GoodreadsImportProcessor;
   let booksRepo: jest.Mocked<Pick<Repository<Book>, 'find' | 'create' | 'save'>>;
   let readingRepo: jest.Mocked<Pick<Repository<ReadingRecord>, 'create' | 'save'>>;
+  let isbnEnrichment: jest.Mocked<Pick<ImportIsbnEnrichmentService, 'enrichBook'>>;
 
   const sampleRow: GoodreadsMappedRow = {
     row_number: 2,
@@ -42,12 +44,16 @@ describe('GoodreadsImportProcessor', () => {
       create: jest.fn((value) => value as ReadingRecord),
       save: jest.fn(async (value) => value as ReadingRecord),
     };
+    isbnEnrichment = {
+      enrichBook: jest.fn(async (book) => book),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         GoodreadsImportProcessor,
         { provide: getRepositoryToken(Book), useValue: booksRepo },
         { provide: getRepositoryToken(ReadingRecord), useValue: readingRepo },
+        { provide: ImportIsbnEnrichmentService, useValue: isbnEnrichment },
       ],
     }).compile();
 
@@ -65,6 +71,9 @@ describe('GoodreadsImportProcessor', () => {
         currentPage: 320,
         progressPercent: '100.00',
       }),
+    );
+    expect(isbnEnrichment.enrichBook).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'book-1' }),
     );
   });
 

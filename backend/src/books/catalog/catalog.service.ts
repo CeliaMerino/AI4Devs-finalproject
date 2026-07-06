@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CatalogSearchResponseDto } from '../dto/catalog-edition.dto';
+import {
+  CatalogEditionDto,
+  CatalogSearchResponseDto,
+} from '../dto/catalog-edition.dto';
+import type { CatalogIsbnLookupResult } from './catalog-isbn-lookup.types';
 import { GoogleBooksClient } from './google-books.client';
 import { OpenLibraryClient } from './open-library.client';
 
@@ -37,5 +41,43 @@ export class CatalogService {
     }
 
     return { items: [], source: 'none' };
+  }
+
+  async lookupByIsbn(isbn: string): Promise<CatalogIsbnLookupResult | null> {
+    const normalized = isbn.replace(/-/g, '').trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const query = `isbn:${normalized}`;
+    const [olEdition, gbEdition] = await Promise.all([
+      this.searchProvider(this.openLibrary, query),
+      this.searchProvider(this.googleBooks, query),
+    ]);
+
+    if (!olEdition && !gbEdition) {
+      return null;
+    }
+
+    return {
+      cover_image_url:
+        olEdition?.cover_image_url ?? gbEdition?.cover_image_url ?? null,
+      genre: gbEdition?.genre ?? null,
+    };
+  }
+
+  private async searchProvider(
+    provider: { search: (query: string, limit: number) => Promise<CatalogEditionDto[]> },
+    query: string,
+  ): Promise<CatalogEditionDto | null> {
+    try {
+      const items = await provider.search(query, 1);
+      return items[0] ?? null;
+    } catch (err) {
+      this.logger.warn(
+        `Catalog provider failed for "${query}": ${err instanceof Error ? err.message : err}`,
+      );
+      return null;
+    }
   }
 }

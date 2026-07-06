@@ -7,6 +7,7 @@ import {
   buildGoodreadsDedupKey,
   buildGoodreadsDedupKeyFromLibraryBook,
 } from './goodreads-dedup.util';
+import { ImportIsbnEnrichmentService } from './import-isbn-enrichment.service';
 import type {
   GoodreadsImportSkippedRow,
   GoodreadsImportSummary,
@@ -21,6 +22,7 @@ export class GoodreadsImportProcessor {
     private readonly booksRepo: Repository<Book>,
     @InjectRepository(ReadingRecord)
     private readonly readingRepo: Repository<ReadingRecord>,
+    private readonly isbnEnrichment: ImportIsbnEnrichmentService,
   ) {}
 
   async processImport(
@@ -68,6 +70,7 @@ export class GoodreadsImportProcessor {
       }
 
       const savedBook = await this.persistRow(userId, row);
+      await this.isbnEnrichment.enrichBook(savedBook);
       batchKeys.add(dedupKey);
       imported.push({ row_number: row.row_number, book_id: savedBook.id });
     }
