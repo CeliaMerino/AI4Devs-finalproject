@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-16",
-  "current_ticket": null,
+  "current_ticket": "KAN-44",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -237,6 +237,84 @@
       "pr_number": 37,
       "archived_at": "2026-07-04T09:20:00Z",
       "error": null
+    },
+    "KAN-44": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-44-goodreads-csv-parser",
+      "branch": "feature/KAN-44-goodreads-csv-parser",
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-45": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-46": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-47": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-49": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-50": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-51": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
+    },
+    "KAN-52": {
+      "status": "pending",
+      "failed_step": null,
+      "change_name": null,
+      "branch": null,
+      "pr_url": null,
+      "pr_number": null,
+      "archived_at": null,
+      "error": null
     }
-  }
-}

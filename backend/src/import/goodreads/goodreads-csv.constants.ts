@@ -1,0 +1,46 @@
+/** Standard Goodreads library export column names (case-sensitive). */
+export const GOODREADS_CSV_HEADERS = [
+  'Book Id',
+  'Title',
+  'Author',
+  'Author l-f',
+  'Additional Authors',
+  'ISBN',
+  'ISBN13',
+  'My Rating',
+  'Average Rating',
+  'Publisher',
+  'Binding',
+  'Number of Pages',
+  'Year Published',
+  'Original Publication Year',
+  'Date Read',
+  'Date Added',
+  'Bookshelves',
+  'Bookshelves with positions',
+  'Exclusive Shelf',
+  'My Review',
+  'Spoiler',
+  'Private Notes',
+  'Read Count',
+  'Owned Copies',
+] as const;
+
+export type GoodreadsCsvHeader = (typeof GOODREADS_CSV_HEADERS)[number];
+
+export const GOODREADS_REQUIRED_HEADERS: GoodreadsCsvHeader[] = [
+  'Book Id',
+  'Title',
+  'Author',
+  'ISBN',
+  'ISBN13',
+  'My Rating',
+  'Binding',
+  'Number of Pages',
+  'Year Published',
+  'Original Publication Year',
+  'Date Read',
+  'Date Added',
+  'Exclusive Shelf',
+  'Read Count',
+];

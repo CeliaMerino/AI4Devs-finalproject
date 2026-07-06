@@ -97,3 +97,40 @@ phases:
     tickets:
       - id: KAN-16
         summary: "Automatic insights (requires stable stats data)"
+
+  - id: phase-6-goodreads-import
+    name: "Phase 6 — Goodreads CSV import (KAN-8 epic)"
+    note: "US-13 KAN-43 → US-14 KAN-48 → US-15 KAN-52. Implement subtasks in order; epics tracked in Jira only."
+    tickets:
+      - id: KAN-44
+        summary: "Backend — robust Goodreads CSV parser + upload endpoint"
+        epic: KAN-43
+      - id: KAN-45
+        summary: "Backend — Goodreads field mapping rules"
+        depends_on: [KAN-44]
+        epic: KAN-43
+      - id: KAN-46
+        summary: "Backend — validation + deduplication"
+        depends_on: [KAN-45]
+        epic: KAN-43
+      - id: KAN-47
+        summary: "Frontend — Goodreads upload screen"
+        depends_on: [KAN-46]
+        epic: KAN-43
+      - id: KAN-49
+        summary: "Backend — enrich imports by ISBN (reuses KAN-9 catalog)"
+        depends_on: [KAN-47]
+        epic: KAN-48
+        relates: [KAN-9]
+      - id: KAN-50
+        summary: "Backend — title+author fallback + genre enrichment"
+        depends_on: [KAN-49]
+        epic: KAN-48
+      - id: KAN-51
+        summary: "Backend — background job + rate limiting + progress"
+        depends_on: [KAN-50]
+        epic: KAN-48
+      - id: KAN-52
+        summary: "Import progress and final summary (US-15)"
+        depends_on: [KAN-51]
+        epic: KAN-48
