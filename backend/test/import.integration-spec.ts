@@ -73,12 +73,22 @@ describe('Import API (integration)', () => {
 
     const body = res.body as {
       rows: Array<{ title: string; isbn13: string | null }>;
-      meta: { parsed_rows: number };
+      mapped_rows: Array<{
+        book: { title: string; isbn13: string | null };
+        reading_record: { status: string; finished_on: string | null };
+      }>;
+      meta: { parsed_rows: number; mapped_rows: number };
     };
 
     expect(body.meta.parsed_rows).toBe(1167);
+    expect(body.meta.mapped_rows).toBe(1167);
     expect(body.rows[0]?.title).toBe('Hacia mareas malditas');
     expect(body.rows[0]?.isbn13).toBe('9788427052918');
+    expect(body.mapped_rows[0]?.book.title).toBe('Hacia mareas malditas');
+    expect(body.mapped_rows[0]?.book.isbn13).toBe('9788427052918');
+    expect(body.mapped_rows[0]?.reading_record.status).toBe('leido');
+    expect(body.mapped_rows[0]?.reading_record.finished_on).toBe('2026-04-26');
+    expect(body.mapped_rows[0]?.reading_record.started_on).toBeNull();
   });
 
   it('requires authentication', async () => {

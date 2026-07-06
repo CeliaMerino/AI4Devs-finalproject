@@ -1,3 +1,8 @@
+import type {
+  GoodreadsMappedRow,
+  GoodreadsMappingWarning,
+} from './goodreads-import.types';
+
 export interface GoodreadsParsedRow {
   row_number: number;
   book_id: string;
@@ -28,10 +33,13 @@ export interface GoodreadsParseWarning {
 
 export interface GoodreadsParseResult {
   rows: GoodreadsParsedRow[];
+  mapped_rows: GoodreadsMappedRow[];
   warnings: GoodreadsParseWarning[];
+  mapping_warnings: GoodreadsMappingWarning[];
   meta: {
     total_rows: number;
     parsed_rows: number;
     skipped_rows: number;
+    mapped_rows: number;
   };
 }

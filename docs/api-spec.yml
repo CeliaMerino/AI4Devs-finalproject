@@ -495,8 +495,9 @@ paths:
       summary: Parse Goodreads library CSV export
       description: >-
         Accepts a multipart CSV file (`file`) from Goodreads library export.
-        Parses UTF-8 quoted CSV, cleans ISBN wrappers, and returns normalized rows
-        for downstream mapping (KAN-44). Does not persist books yet.
+        Parses UTF-8 CSV, cleans ISBN wrappers, returns normalized rows and
+        mapped `book` + `reading_record` drafts per US-13 rules (KAN-44/45).
+        Does not persist books yet.
       tags: [Import]
       security:
         - bearerAuth: []
@@ -1501,19 +1502,27 @@ components:
 
     GoodreadsParseResponse:
       type: object
-      required: [rows, warnings, meta]
+      required: [rows, mapped_rows, warnings, mapping_warnings, meta]
       properties:
         rows:
           type: array
           items:
             $ref: '#/components/schemas/GoodreadsParsedRow'
+        mapped_rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsMappedRow'
         warnings:
           type: array
           items:
             $ref: '#/components/schemas/GoodreadsParseWarning'
+        mapping_warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsMappingWarning'
         meta:
           type: object
-          required: [total_rows, parsed_rows, skipped_rows]
+          required: [total_rows, parsed_rows, skipped_rows, mapped_rows]
           properties:
             total_rows:
               type: integer
@@ -1521,6 +1530,89 @@ components:
               type: integer
             skipped_rows:
               type: integer
+            mapped_rows:
+              type: integer
+
+    GoodreadsImportBookDraft:
+      type: object
+      required: [title, authors, data_source]
+      properties:
+        title:
+          type: string
+        authors:
+          type: string
+        isbn10:
+          oneOf:
+            - type: string
+            - type: 'null'
+        isbn13:
+          oneOf:
+            - type: string
+            - type: 'null'
+        page_count:
+          oneOf:
+            - type: integer
+            - type: 'null'
+        publication_year:
+          oneOf:
+            - type: integer
+            - type: 'null'
+        data_source:
+          type: string
+          enum: [goodreads]
+        external_provider_id:
+          oneOf:
+            - type: string
+            - type: 'null'
+
+    GoodreadsImportReadingRecordDraft:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pendiente, leyendo, leido, dnf]
+        rating:
+          oneOf:
+            - type: number
+            - type: 'null'
+        read_format:
+          oneOf:
+            - type: string
+              enum: [fisico, ebook, audio]
+            - type: 'null'
+        started_on:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        finished_on:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+
+    GoodreadsMappedRow:
+      type: object
+      required: [row_number, book, reading_record]
+      properties:
+        row_number:
+          type: integer
+        book:
+          $ref: '#/components/schemas/GoodreadsImportBookDraft'
+        reading_record:
+          $ref: '#/components/schemas/GoodreadsImportReadingRecordDraft'
+
+    GoodreadsMappingWarning:
+      type: object
+      required: [row_number, code, message]
+      properties:
+        row_number:
+          type: integer
+        code:
+          type: string
+        message:
+          type: string
 
     BookDuplicateError:
       type: object
