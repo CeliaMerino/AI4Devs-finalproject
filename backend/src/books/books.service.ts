@@ -24,6 +24,7 @@ import {
   ReadingRecordResourceDto,
 } from './dto/reading-record-response.dto';
 import { GoogleBooksClient } from './catalog/google-books.client';
+import { CatalogService } from './catalog/catalog.service';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
 import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
@@ -41,6 +42,7 @@ export class BooksService {
     private readonly readingRepo: Repository<ReadingRecord>,
     private readonly openLibraryEnrichment: OpenLibraryEnrichmentService,
     private readonly googleBooksClient: GoogleBooksClient,
+    private readonly catalogService: CatalogService,
     @Inject(forwardRef(() => TbrService))
     private readonly tbrService: TbrService,
   ) {}
@@ -254,6 +256,15 @@ export class BooksService {
       });
       genre = genre ?? enriched.genre;
       page_count = page_count ?? enriched.page_count;
+    }
+
+    if (!genre && dto.data_source === 'open_library') {
+      genre = await this.catalogService.resolveMissingGenreFromGoogleBooks({
+        genre,
+        isbn_13: dto.isbn_13 ?? null,
+        isbn_10: dto.isbn_10 ?? null,
+        data_source: 'open_library',
+      });
     }
 
     if (
