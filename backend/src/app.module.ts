@@ -12,6 +12,7 @@ import { ListsModule } from './lists/lists.module';
 import { MonthlyTbrList } from './lists/entities/monthly-tbr-list.entity';
 import { TbrEntry } from './lists/entities/tbr-entry.entity';
 import { StatsModule } from './stats/stats.module';
+import { ImportModule } from './import/import.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -37,6 +38,7 @@ import { UsersModule } from './users/users.module';
     ListsModule,
     GoalsModule,
     StatsModule,
+    ImportModule,
   ],
 })
 export class AppModule {}

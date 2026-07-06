@@ -29,6 +29,8 @@ tags:
     description: Annual reading goals and progress (UC-06)
   - name: Stats
     description: Monthly reading statistics dashboard (UC-07)
+  - name: Import
+    description: Goodreads CSV import (US-13)
 
 paths:
   /auth/dev-login:
@@ -487,6 +489,45 @@ paths:
                 $ref: '#/components/schemas/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /import/goodreads:
+    post:
+      summary: Parse Goodreads library CSV export
+      description: >-
+        Accepts a multipart CSV file (`file`) from Goodreads library export.
+        Parses UTF-8 quoted CSV, cleans ISBN wrappers, and returns normalized rows
+        for downstream mapping (KAN-44). Does not persist books yet.
+      tags: [Import]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Parsed Goodreads rows ready for mapping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoodreadsParseResponse'
+        '400':
+          description: Missing file, invalid CSV, or missing headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: CSV exceeds size limit
 
   /books/catalog/search:
     get:
@@ -1392,6 +1433,94 @@ components:
           items:
             $ref: '#/components/schemas/StatsInsight'
           description: Deterministic automatic insights for the period; empty when no qualifying books.
+
+    GoodreadsParsedRow:
+      type: object
+      required:
+        - row_number
+        - book_id
+        - title
+        - author
+        - exclusive_shelf
+      properties:
+        row_number:
+          type: integer
+        book_id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        additional_authors:
+          type: string
+        isbn:
+          oneOf:
+            - type: string
+            - type: 'null'
+        isbn13:
+          oneOf:
+            - type: string
+            - type: 'null'
+        my_rating:
+          type: string
+        average_rating:
+          type: string
+        publisher:
+          type: string
+        binding:
+          type: string
+        number_of_pages:
+          type: string
+        year_published:
+          type: string
+        original_publication_year:
+          type: string
+        date_read:
+          type: string
+        date_added:
+          type: string
+        exclusive_shelf:
+          type: string
+        read_count:
+          type: string
+        bookshelves:
+          type: string
+
+    GoodreadsParseWarning:
+      type: object
+      required: [code, message]
+      properties:
+        row_number:
+          oneOf:
+            - type: integer
+            - type: 'null'
+        code:
+          type: string
+        message:
+          type: string
+
+    GoodreadsParseResponse:
+      type: object
+      required: [rows, warnings, meta]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsParsedRow'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoodreadsParseWarning'
+        meta:
+          type: object
+          required: [total_rows, parsed_rows, skipped_rows]
+          properties:
+            total_rows:
+              type: integer
+            parsed_rows:
+              type: integer
+            skipped_rows:
+              type: integer
 
     BookDuplicateError:
       type: object
