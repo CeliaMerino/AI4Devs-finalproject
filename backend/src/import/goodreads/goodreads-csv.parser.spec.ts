@@ -91,6 +91,7 @@ describe('parseGoodreadsCsv', () => {
       total_rows: 1167,
       parsed_rows: 1167,
       skipped_rows: 0,
+      mapped_rows: 1167,
     });
     expect(result.warnings).toHaveLength(0);
 

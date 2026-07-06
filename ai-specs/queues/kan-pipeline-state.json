@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-44",
-  "current_ticket": null,
+  "current_ticket": "KAN-45",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -249,12 +249,12 @@
       "error": null
     },
     "KAN-45": {
-      "status": "pending",
+      "status": "awaiting_merge",
       "failed_step": null,
-      "change_name": null,
-      "branch": null,
-      "pr_url": null,
-      "pr_number": null,
+      "change_name": "kan-45-goodreads-field-mapping",
+      "branch": "feature/KAN-45-goodreads-field-mapping",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/39",
+      "pr_number": 39,
       "archived_at": null,
       "error": null
     },

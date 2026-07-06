@@ -4,6 +4,7 @@ import {
   GOODREADS_REQUIRED_HEADERS,
   type GoodreadsCsvHeader,
 } from './goodreads-csv.constants';
+import { mapGoodreadsRows } from './goodreads-row.mapper';
 import type {
   GoodreadsParseResult,
   GoodreadsParseWarning,
@@ -161,13 +162,18 @@ export function parseGoodreadsCsv(content: string): GoodreadsParseResult {
     rows.push(toParsedRow(rowNumber, values, headerIndex));
   }
 
+  const mapping = mapGoodreadsRows(rows);
+
   return {
     rows,
+    mapped_rows: mapping.mapped_rows,
     warnings,
+    mapping_warnings: mapping.mapping_warnings,
     meta: {
       total_rows: lines.length - 1,
       parsed_rows: rows.length,
       skipped_rows: skippedRows,
+      mapped_rows: mapping.mapped_rows.length,
     },
   };
 }
