@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-49",
-  "current_ticket": null,
+  "current_ticket": "KAN-50",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -289,12 +289,12 @@
       "error": null
     },
     "KAN-50": {
-      "status": "pending",
+      "status": "awaiting_merge",
       "failed_step": null,
-      "change_name": null,
-      "branch": null,
-      "pr_url": null,
-      "pr_number": null,
+      "change_name": "kan-50-import-title-author-enrichment",
+      "branch": "feature/KAN-50-import-title-author-enrichment",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/43",
+      "pr_number": 43,
       "archived_at": null,
       "error": null
     },
