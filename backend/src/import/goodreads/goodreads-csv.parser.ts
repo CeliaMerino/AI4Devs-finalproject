@@ -6,6 +6,7 @@ import {
 } from './goodreads-csv.constants';
 import { mapGoodreadsRows } from './goodreads-row.mapper';
 import type {
+  GoodreadsParsedRow,
   GoodreadsParseWarning,
   GoodreadsParsedUploadResult,
 } from './goodreads-csv.types';
