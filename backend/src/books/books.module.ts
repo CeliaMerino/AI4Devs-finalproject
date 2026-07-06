@@ -5,6 +5,7 @@ import { ListsModule } from '../lists/lists.module';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 import { CatalogService } from './catalog/catalog.service';
+import { CatalogRateLimiter } from './catalog/catalog-rate-limiter.service';
 import { EditionCoversService } from './catalog/edition-covers.service';
 import { GoogleBooksCoversService } from './catalog/google-books-covers.service';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
@@ -30,6 +31,7 @@ import { ReadingRecord } from './entities/reading-record.entity';
   providers: [
     BooksService,
     CatalogService,
+    CatalogRateLimiter,
     EditionCoversService,
     OpenLibraryEnrichmentService,
     OpenLibraryCoversService,
@@ -37,6 +39,6 @@ import { ReadingRecord } from './entities/reading-record.entity';
     OpenLibraryClient,
     GoogleBooksClient,
   ],
-  exports: [BooksService, CatalogService],
+  exports: [BooksService, CatalogService, CatalogRateLimiter],
 })
 export class BooksModule {}

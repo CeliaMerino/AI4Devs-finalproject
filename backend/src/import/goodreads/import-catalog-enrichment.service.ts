@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CatalogService } from '../../books/catalog/catalog.service';
+import { CatalogRateLimiter } from '../../books/catalog/catalog-rate-limiter.service';
 import { Book } from '../../books/entities/book.entity';
 
 export interface ImportEnrichmentResult {
@@ -15,6 +16,7 @@ export class ImportCatalogEnrichmentService {
 
   constructor(
     private readonly catalog: CatalogService,
+    private readonly rateLimiter: CatalogRateLimiter,
     @InjectRepository(Book)
     private readonly booksRepo: Repository<Book>,
   ) {}
@@ -32,9 +34,11 @@ export class ImportCatalogEnrichmentService {
 
       if (isbn) {
         attempted = true;
+        await this.rateLimiter.throttle();
         lookup = await this.catalog.lookupByIsbn(isbn);
       } else if (book.title.trim() && book.authors.trim()) {
         attempted = true;
+        await this.rateLimiter.throttle();
         lookup = await this.catalog.lookupByTitleAuthor(
           book.title,
           book.authors,

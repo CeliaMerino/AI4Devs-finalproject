@@ -288,8 +288,33 @@ export interface GoodreadsImportMeta {
   imported_count: number;
   skipped_duplicate_count: number;
   skipped_invalid_count: number;
+  enrichment_failed_count?: number;
 }
 
 export interface GoodreadsImportResponse {
   meta: GoodreadsImportMeta;
+}
+
+export type ImportJobStatus =
+  | 'queued'
+  | 'parsing'
+  | 'importing'
+  | 'enriching'
+  | 'completed'
+  | 'failed';
+
+export interface ImportJobAcceptedResponse {
+  job_id: string;
+  status: ImportJobStatus;
+  phase: ImportJobStatus;
+}
+
+export interface ImportJobStatusResponse {
+  job_id: string;
+  status: ImportJobStatus;
+  phase: ImportJobStatus;
+  processed_count: number;
+  total_count: number;
+  result: GoodreadsImportResponse | null;
+  error_message: string | null;
 }

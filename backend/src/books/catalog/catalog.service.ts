@@ -4,6 +4,7 @@ import {
   CatalogSearchResponseDto,
 } from '../dto/catalog-edition.dto';
 import type { CatalogIsbnLookupResult } from './catalog-isbn-lookup.types';
+import { retryWithBackoff } from './retry-with-backoff.util';
 import { GoogleBooksClient } from './google-books.client';
 import { OpenLibraryClient } from './open-library.client';
 
@@ -101,7 +102,10 @@ export class CatalogService {
     query: string,
   ): Promise<CatalogEditionDto | null> {
     try {
-      const items = await provider.search(query, 1);
+      const items = await retryWithBackoff(
+        () => provider.search(query, 1),
+        { maxAttempts: 3, baseDelayMs: 200 },
+      );
       return items[0] ?? null;
     } catch (err) {
       this.logger.warn(

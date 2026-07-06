@@ -3,42 +3,41 @@ import {
   Injectable,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { parseGoodreadsCsv } from './goodreads/goodreads-csv.parser';
-import { GoodreadsImportProcessor } from './goodreads/goodreads-import.processor';
-import type { GoodreadsImportResult, UploadedCsvFile } from './import.types';
+import { ImportJobRunner } from './import-job.runner';
+import { ImportJobService } from './import-job.service';
+import type { ImportJobAcceptedResponse } from './import-job.types';
+import type { UploadedCsvFile } from './import.types';
 
 const MAX_GOODREADS_CSV_BYTES = 10 * 1024 * 1024;
 
 @Injectable()
 export class ImportService {
   constructor(
-    private readonly goodreadsImportProcessor: GoodreadsImportProcessor,
+    private readonly importJobService: ImportJobService,
+    private readonly importJobRunner: ImportJobRunner,
   ) {}
 
   async importGoodreadsUpload(
     userId: string,
     file: UploadedCsvFile | undefined,
-  ): Promise<GoodreadsImportResult> {
-    const parsed = this.parseGoodreadsUpload(file);
-    const importResult = await this.goodreadsImportProcessor.processImport(
-      userId,
-      parsed.mapped_rows,
-      parsed.mapping_warnings,
-    );
+  ): Promise<ImportJobAcceptedResponse> {
+    const content = this.readGoodreadsUpload(file);
+    const accepted = await this.importJobService.createQueuedJob(userId, content);
 
-    return {
-      ...parsed,
-      imported: importResult.imported,
-      skipped_rows: importResult.skipped_rows,
-      enrichment_failed: importResult.enrichment_failed,
-      meta: {
-        ...parsed.meta,
-        ...importResult.meta,
-      },
-    };
+    if (process.env.IMPORT_JOBS_SYNC === 'true') {
+      await this.importJobRunner.runJob(accepted.job_id, userId);
+    } else {
+      this.importJobRunner.enqueue(accepted.job_id, userId);
+    }
+
+    return accepted;
   }
 
-  parseGoodreadsUpload(file: UploadedCsvFile | undefined) {
+  getImportJob(userId: string, jobId: string) {
+    return this.importJobService.getJobForUser(userId, jobId);
+  }
+
+  private readGoodreadsUpload(file: UploadedCsvFile | undefined): string {
     if (!file) {
       throw new BadRequestException('CSV file is required (field name: file)');
     }
@@ -47,7 +46,6 @@ export class ImportService {
       throw new PayloadTooLargeException('CSV file exceeds 10 MB limit');
     }
 
-    const content = file.buffer.toString('utf8');
-    return parseGoodreadsCsv(content);
+    return file.buffer.toString('utf8');
   }
 }

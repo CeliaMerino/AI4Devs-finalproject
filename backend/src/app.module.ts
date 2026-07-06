@@ -13,6 +13,7 @@ import { MonthlyTbrList } from './lists/entities/monthly-tbr-list.entity';
 import { TbrEntry } from './lists/entities/tbr-entry.entity';
 import { StatsModule } from './stats/stats.module';
 import { ImportModule } from './import/import.module';
+import { ImportJob } from './import/entities/import-job.entity';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -26,7 +27,7 @@ import { UsersModule } from './users/users.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
-        entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, AnnualReadingGoal],
+        entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, AnnualReadingGoal, ImportJob],
         migrations: [`${__dirname}/migrations/*{.ts,.js}`],
         migrationsRun: config.get('TYPEORM_MIGRATIONS_RUN') === 'true',
         synchronize: config.get('TYPEORM_SYNCHRONIZE') === 'true',

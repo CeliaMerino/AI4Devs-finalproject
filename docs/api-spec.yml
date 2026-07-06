@@ -492,12 +492,11 @@ paths:
 
   /import/goodreads:
     post:
-      summary: Parse Goodreads library CSV export
+      summary: Start Goodreads library CSV import job
       description: >-
-        Accepts a multipart CSV file (`file`) from Goodreads library export.
-        Parses UTF-8 CSV, cleans ISBN wrappers, maps rows to import drafts,
-        validates and dedupes against the user's library, persists new books,
-        and returns parse/mapping warnings plus import summary (KAN-44–46).
+        Accepts a multipart CSV file (`file`) from Goodreads library export and
+        enqueues a background job that parses, imports, dedupes, and enriches
+        books. Poll `GET /import/jobs/{jobId}` for progress and final result.
       tags: [Import]
       security:
         - bearerAuth: []
@@ -513,12 +512,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        '200':
-          description: Parsed Goodreads rows ready for mapping
+        '202':
+          description: Import job accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GoodreadsParseResponse'
+                $ref: '#/components/schemas/ImportJobAcceptedResponse'
         '400':
           description: Missing file, invalid CSV, or missing headers
           content:
@@ -529,6 +528,32 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '413':
           description: CSV exceeds size limit
+
+  /import/jobs/{jobId}:
+    get:
+      summary: Get Goodreads import job status
+      description: Returns progress (`processed_count`, `total_count`, `phase`) and the full import `result` when completed.
+      tags: [Import]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Import job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Job not found for user
 
   /books/catalog/search:
     get:
@@ -1578,6 +1603,47 @@ components:
           enum: [ENRICHMENT_CATALOG_MISS]
         message:
           type: string
+
+    ImportJobAcceptedResponse:
+      type: object
+      required: [job_id, status, phase]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, parsing, importing, enriching, completed, failed]
+        phase:
+          type: string
+          enum: [queued, parsing, importing, enriching, completed, failed]
+
+    ImportJobStatusResponse:
+      type: object
+      required:
+        [job_id, status, phase, processed_count, total_count, result, error_message]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, parsing, importing, enriching, completed, failed]
+        phase:
+          type: string
+          enum: [queued, parsing, importing, enriching, completed, failed]
+        processed_count:
+          type: integer
+        total_count:
+          type: integer
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/GoodreadsParseResponse'
+            - type: 'null'
+        error_message:
+          oneOf:
+            - type: string
+            - type: 'null'
 
     GoodreadsImportBookDraft:
       type: object

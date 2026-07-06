@@ -32,6 +32,14 @@ export interface GoodreadsMappingWarning {
   message: string;
 }
 
+import type { GoodreadsImportProgressUpdate } from '../import-job.types';
+
+export interface GoodreadsImportProcessOptions {
+  onProgress?: (
+    progress: GoodreadsImportProgressUpdate,
+  ) => void | Promise<void>;
+}
+
 export interface GoodreadsMappingResult {
   mapped_rows: GoodreadsMappedRow[];
   mapping_warnings: GoodreadsMappingWarning[];
