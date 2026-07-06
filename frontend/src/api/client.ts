@@ -197,7 +197,7 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-async function pollImportJobUntilComplete(
+export async function pollImportJobUntilComplete(
   jobId: string,
   onProgress?: (status: ImportJobStatusResponse) => void,
 ): Promise<GoodreadsImportResponse> {
@@ -227,13 +227,11 @@ async function pollImportJobUntilComplete(
 }
 
 export interface ImportGoodreadsCsvOptions {
+  onJobAccepted?: (jobId: string) => void;
   onProgress?: (status: ImportJobStatusResponse) => void;
 }
 
-export async function importGoodreadsCsv(
-  file: File,
-  options?: ImportGoodreadsCsvOptions,
-): Promise<GoodreadsImportResponse> {
+export async function startGoodreadsImport(file: File): Promise<string> {
   const token = getToken();
   const formData = new FormData();
   formData.append('file', file, file.name);
@@ -259,10 +257,22 @@ export async function importGoodreadsCsv(
 
   if (res.status === 202) {
     const accepted = (await res.json()) as ImportJobAcceptedResponse;
-    return pollImportJobUntilComplete(accepted.job_id, options?.onProgress);
+    return accepted.job_id;
   }
 
-  return res.json() as Promise<GoodreadsImportResponse>;
+  throw new ApiRequestError(500, {
+    statusCode: 500,
+    message: 'Expected async import job response',
+  });
+}
+
+export async function importGoodreadsCsv(
+  file: File,
+  options?: ImportGoodreadsCsvOptions,
+): Promise<GoodreadsImportResponse> {
+  const jobId = await startGoodreadsImport(file);
+  options?.onJobAccepted?.(jobId);
+  return pollImportJobUntilComplete(jobId, options?.onProgress);
 }
 
 export function catalogEditionToCreatePayload(

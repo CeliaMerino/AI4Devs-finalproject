@@ -291,8 +291,23 @@ export interface GoodreadsImportMeta {
   enrichment_failed_count?: number;
 }
 
+export interface GoodreadsImportMappedRow {
+  row_number: number;
+  reading_record: {
+    status: ReadingStatus;
+    finished_on: string | null;
+  };
+}
+
+export interface GoodreadsImportedRowRef {
+  row_number: number;
+  book_id: string;
+}
+
 export interface GoodreadsImportResponse {
   meta: GoodreadsImportMeta;
+  mapped_rows?: GoodreadsImportMappedRow[];
+  imported?: GoodreadsImportedRowRef[];
 }
 
 export type ImportJobStatus =
