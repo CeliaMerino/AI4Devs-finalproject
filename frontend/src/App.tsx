@@ -7,6 +7,7 @@ import { GoalsPage } from './pages/GoalsPage';
 import { HomePage } from './pages/HomePage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
+import { ImportExportPage } from './pages/ImportExportPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { StatsPage } from './pages/StatsPage';
 import './App.css';
@@ -55,15 +56,7 @@ function AppRoutes() {
             />
           }
         />
-        <Route
-          path="import-export"
-          element={
-            <PlaceholderPage
-              title="Import / Export"
-              description="Import from Excel, CSV, or Goodreads and export your data will live here."
-            />
-          }
-        />
+        <Route path="import-export" element={<ImportExportPage />} />
         <Route
           path="profile"
           element={
