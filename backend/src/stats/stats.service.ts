@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Book } from '../books/entities/book.entity';
 import { ReadingRecord } from '../books/entities/reading-record.entity';
 import { Audience } from '../audiences/entities/audience.entity';
+import { Format } from '../formats/entities/format.entity';
 import type {
   AudienceCountDto,
   FormatCountDto,
@@ -185,9 +186,8 @@ export class StatsService {
       await this.distribution(userId, periodStart, periodEnd, 'b.genre')
     ).map(({ label, count }) => ({ genre: label, count }));
 
-    const formatDistribution: FormatCountDto[] = (
-      await this.distribution(userId, periodStart, periodEnd, 'rr.readFormat')
-    ).map(({ label, count }) => ({ format: label, count }));
+    const formatDistribution: FormatCountDto[] =
+      await this.formatDistribution(userId, periodStart, periodEnd);
 
     const audienceDistribution: AudienceCountDto[] =
       await this.audienceDistribution(userId, periodStart, periodEnd);
@@ -206,6 +206,49 @@ export class StatsService {
       audience_distribution: audienceDistribution,
       rating_distribution: ratingDistribution,
     };
+  }
+
+  private async formatDistribution(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<FormatCountDto[]> {
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .leftJoin(Format, 'f', 'f.id = rr.formatId')
+      .select(
+        `CASE
+          WHEN f.name IS NULL THEN :unknown
+          WHEN lower(f.name) = 'físico' THEN 'fisico'
+          WHEN lower(f.name) = 'ebook' THEN 'ebook'
+          WHEN lower(f.name) = 'audio' THEN 'audio'
+          ELSE :unknown
+        END`,
+        'key',
+      )
+      .addSelect('COUNT(*)', 'count')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .groupBy(
+        `CASE
+          WHEN f.name IS NULL THEN :unknown
+          WHEN lower(f.name) = 'físico' THEN 'fisico'
+          WHEN lower(f.name) = 'ebook' THEN 'ebook'
+          WHEN lower(f.name) = 'audio' THEN 'audio'
+          ELSE :unknown
+        END`,
+      )
+      .orderBy('COUNT(*)', 'DESC')
+      .setParameter('unknown', UNKNOWN_BUCKET)
+      .getRawMany<DistributionRow>();
+
+    return rows.map((row) => ({
+      format: row.key ?? UNKNOWN_BUCKET,
+      count: StatsService.toInt(row.count),
+    }));
   }
 
   private async audienceDistribution(

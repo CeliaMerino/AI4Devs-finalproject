@@ -6,6 +6,8 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AudiencesModule } from '../src/audiences/audiences.module';
 import { Audience } from '../src/audiences/entities/audience.entity';
+import { FormatsModule } from '../src/formats/formats.module';
+import { Format } from '../src/formats/entities/format.entity';
 import { AuthModule } from '../src/auth/auth.module';
 import { BooksModule } from '../src/books/books.module';
 import { Book } from '../src/books/entities/book.entity';
@@ -123,6 +125,7 @@ describe('Stats API (integration)', () => {
             Book,
             ReadingRecord,
             Audience,
+            Format,
             AnnualReadingGoal,
             MonthlyTbrList,
             TbrEntry,
@@ -132,6 +135,7 @@ describe('Stats API (integration)', () => {
         UsersModule,
         AuthModule,
         AudiencesModule,
+        FormatsModule,
         BooksModule,
         ListsModule,
         GoalsModule,

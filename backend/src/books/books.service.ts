@@ -28,6 +28,8 @@ import { CatalogService } from './catalog/catalog.service';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
 import { GenreNormalizerService } from './genre-normalizer.service';
 import { AudiencesService } from '../audiences/audiences.service';
+import { FormatsService } from '../formats/formats.service';
+import { legacySlugFromFormatName } from '../formats/formats.constants';
 import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
@@ -47,6 +49,7 @@ export class BooksService {
     private readonly catalogService: CatalogService,
     private readonly genreNormalizer: GenreNormalizerService,
     private readonly audiencesService: AudiencesService,
+    private readonly formatsService: FormatsService,
     @Inject(forwardRef(() => TbrService))
     private readonly tbrService: TbrService,
   ) {}
@@ -54,7 +57,7 @@ export class BooksService {
   async listForUser(userId: string): Promise<BookListItemDto[]> {
     const books = await this.booksRepo.find({
       where: { userId },
-      relations: ['readingRecord'],
+      relations: ['readingRecord', 'readingRecord.formatRef'],
       order: { createdAt: 'DESC' },
     });
     return books.map((b) => ({
@@ -63,7 +66,7 @@ export class BooksService {
       started_on: b.readingRecord?.startedOn ?? null,
       finished_on: b.readingRecord?.finishedOn ?? null,
       rating: normalizeRating(b.readingRecord?.rating),
-      read_format: b.readingRecord?.readFormat ?? null,
+      read_format: legacySlugFromFormatName(b.readingRecord?.formatRef?.name),
     }));
   }
 
@@ -76,7 +79,7 @@ export class BooksService {
 
     const book = await this.booksRepo.findOne({
       where: { id: bookId, userId },
-      relations: ['readingRecord'],
+      relations: ['readingRecord', 'readingRecord.formatRef'],
     });
     if (!book?.readingRecord) {
       throw new NotFoundException('Book not found');
@@ -98,7 +101,11 @@ export class BooksService {
       reading.rating = dto.rating === null ? null : String(dto.rating);
     }
     if (dto.read_format !== undefined) {
-      reading.readFormat = dto.read_format;
+      reading.formatId = await this.formatsService.resolveFormatIdByLegacySlug(
+        userId,
+        dto.read_format,
+      );
+      reading.formatRef = null;
     }
 
     const today = this.utcToday();
@@ -140,6 +147,12 @@ export class BooksService {
 
     await this.readingRepo.save(reading);
 
+    const reloaded = await this.readingRepo.findOne({
+      where: { bookId: reading.bookId },
+      relations: ['formatRef'],
+    });
+    const readingForResponse = reloaded ?? reading;
+
     const meta: PatchSideEffectsMetaDto = {};
     if (reading.status === 'leido' && previousStatus !== 'leido') {
       meta.openCompletionModal = true;
@@ -163,7 +176,7 @@ export class BooksService {
     const hasMeta = meta.openCompletionModal || meta.tbrAutoCompleted;
 
     return {
-      reading: this.toReadingRecordResource(reading),
+      reading: this.toReadingRecordResource(readingForResponse),
       book: { id: book.id, page_count: book.pageCount },
       ...(hasMeta ? { meta } : {}),
     };
@@ -194,7 +207,7 @@ export class BooksService {
       current_page: reading.currentPage,
       progress_percent: reading.progressPercent,
       rating: normalizeRating(reading.rating),
-      read_format: reading.readFormat,
+      read_format: legacySlugFromFormatName(reading.formatRef?.name),
       started_on: reading.startedOn,
       finished_on: reading.finishedOn,
       updated_at: reading.updatedAt.toISOString(),

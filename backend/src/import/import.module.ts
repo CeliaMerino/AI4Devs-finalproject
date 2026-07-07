@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BooksModule } from '../books/books.module';
+import { FormatsModule } from '../formats/formats.module';
 import { Book } from '../books/entities/book.entity';
 import { ReadingRecord } from '../books/entities/reading-record.entity';
 import { ImportJob } from './entities/import-job.entity';
@@ -15,6 +16,7 @@ import { ImportService } from './import.service';
   imports: [
     TypeOrmModule.forFeature([Book, ReadingRecord, ImportJob]),
     BooksModule,
+    FormatsModule,
   ],
   controllers: [ImportController],
   providers: [

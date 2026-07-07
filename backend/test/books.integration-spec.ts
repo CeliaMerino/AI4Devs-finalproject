@@ -4,6 +4,8 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AudiencesModule } from '../src/audiences/audiences.module';
 import { Audience } from '../src/audiences/entities/audience.entity';
+import { FormatsModule } from '../src/formats/formats.module';
+import { Format } from '../src/formats/entities/format.entity';
 import { AuthModule } from '../src/auth/auth.module';
 import { BooksModule } from '../src/books/books.module';
 import { Book } from '../src/books/entities/book.entity';
@@ -30,12 +32,13 @@ describe('Books API (integration)', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, Audience],
+          entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, Audience, Format],
           synchronize: true,
         }),
         UsersModule,
         AuthModule,
         AudiencesModule,
+        FormatsModule,
         BooksModule,
         ListsModule,
       ],
