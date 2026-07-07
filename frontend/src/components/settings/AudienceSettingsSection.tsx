@@ -173,7 +173,7 @@ export function AudienceSettingsSection() {
       >
         {pendingDelete ? (
           <p>
-            Este público objetivo está asignado a {pendingDelete.affectedBookCount}{' '}
+            Este elemento está asignado a {pendingDelete.affectedBookCount}{' '}
             {pendingDelete.affectedBookCount === 1 ? 'libro' : 'libros'}. Si lo borras,
             {pendingDelete.affectedBookCount === 1
               ? ' ese libro se quedará'

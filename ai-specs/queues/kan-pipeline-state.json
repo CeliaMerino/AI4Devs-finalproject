@@ -2,8 +2,8 @@
   "version": 1,
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
-  "last_completed": "KAN-67",
-  "current_ticket": "KAN-68",
+  "last_completed": "KAN-68",
+  "current_ticket": null,
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -379,12 +379,12 @@
       "error": null
     },
     "KAN-68": {
-      "status": "awaiting_merge",
+      "status": "done",
       "failed_step": null,
       "change_name": "kan-68-audience-delete-confirmation",
       "branch": "feature/KAN-68-audience-delete-confirmation",
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/53",
       "pr_number": 53,
-      "archived_at": null,
+      "archived_at": "2026-07-07T19:40:00Z",
       "error": null
     }
