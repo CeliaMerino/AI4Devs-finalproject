@@ -5,7 +5,7 @@ import { PieChart, type PieSlice } from './PieChart';
 import './PieChart.css';
 
 const AUDIENCE_LABELS: Record<string, string> = {
-  unknown: 'Sin audiencia',
+  unknown: 'Sin público objetivo',
 };
 
 function audienceLabel(audience: string): string {
@@ -33,7 +33,7 @@ export function AudiencePieChart({ distribution }: AudiencePieChartProps) {
   return (
     <ChartCard
       className="audience-pie-chart"
-      title="Distribución por audiencia"
+      title="Distribución por público objetivo"
       subtitle="Young adult, new adult y adulto."
     >
       <PieChart slices={slices} />

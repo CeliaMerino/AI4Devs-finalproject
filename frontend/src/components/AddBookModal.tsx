@@ -275,7 +275,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
             />
             <AudienceSelect
               id="add-book-audience"
-              label="Audience"
+              label="Público objetivo"
               value={audience}
               onChange={setAudience}
               disabled={saving}
