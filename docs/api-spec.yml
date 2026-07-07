@@ -111,6 +111,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /audiences/{id}/affected-books:
+    get:
+      summary: Count books assigned to an audience
+      description: Returns how many of the user's books reference this audience before delete confirmation.
+      tags: [Audiences]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Affected book count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectedBooksResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Audience not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /audiences/{id}:
     delete:
       summary: Delete audience label
@@ -930,6 +960,14 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+
+    AffectedBooksResponse:
+      type: object
+      required: [affected_book_count]
+      properties:
+        affected_book_count:
+          type: integer
+          minimum: 0
 
     Book:
       type: object

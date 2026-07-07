@@ -5,8 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Book } from '../books/entities/book.entity';
 import { DEFAULT_AUDIENCE_NAMES } from './audiences.constants';
 import { AudienceResponseDto, toAudienceResponse } from './dto/audience-response.dto';
+import { AffectedBooksResponseDto } from './dto/affected-books-response.dto';
 import { Audience } from './entities/audience.entity';
 
 @Injectable()
@@ -14,6 +16,8 @@ export class AudiencesService {
   constructor(
     @InjectRepository(Audience)
     private readonly audiencesRepo: Repository<Audience>,
+    @InjectRepository(Book)
+    private readonly booksRepo: Repository<Book>,
   ) {}
 
   async hasAudiences(userId: string): Promise<boolean> {
@@ -59,6 +63,29 @@ export class AudiencesService {
     return this.audiencesRepo.findOne({
       where: { id: audienceId, userId },
     });
+  }
+
+  async countAffectedBooks(
+    userId: string,
+    audienceId: string,
+  ): Promise<AffectedBooksResponseDto> {
+    const audience = await this.audiencesRepo.findOne({
+      where: { id: audienceId, userId },
+    });
+
+    if (!audience) {
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Audience not found',
+        code: 'AUDIENCE_NOT_FOUND',
+      });
+    }
+
+    const affected_book_count = await this.booksRepo.count({
+      where: { userId, audienceId },
+    });
+
+    return { affected_book_count };
   }
 
   async deleteForUser(userId: string, audienceId: string): Promise<void> {

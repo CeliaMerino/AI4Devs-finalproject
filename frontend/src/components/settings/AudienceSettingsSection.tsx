@@ -1,14 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { createAudience, deleteAudience, listAudiences } from '../../api/client';
+import {
+  createAudience,
+  deleteAudience,
+  getAudienceAffectedBookCount,
+  listAudiences,
+} from '../../api/client';
 import { messageFromUnknownError } from '../../api/errors';
-import { Button, Card, Input } from '../ui';
+import { Button, Card, ConfirmModal, Input } from '../ui';
 import './AudienceSettingsSection.css';
+
+type PendingDelete = {
+  id: string;
+  name: string;
+  affectedBookCount: number;
+};
 
 export function AudienceSettingsSection() {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [deletePreviewLoadingId, setDeletePreviewLoadingId] = useState<string | null>(
+    null,
+  );
 
   const { data: audiences = [], isLoading, error } = useQuery({
     queryKey: ['audiences'],
@@ -30,7 +46,13 @@ export function AudienceSettingsSection() {
   const deleteMutation = useMutation({
     mutationFn: (audienceId: string) => deleteAudience(audienceId),
     onSuccess: () => {
+      setPendingDelete(null);
+      setDeleteError(null);
       void queryClient.invalidateQueries({ queryKey: ['audiences'] });
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
+    },
+    onError: (err) => {
+      setDeleteError(messageFromUnknownError(err));
     },
   });
 
@@ -43,6 +65,35 @@ export function AudienceSettingsSection() {
     }
     setFormError(null);
     createMutation.mutate(trimmed);
+  }
+
+  async function handleDeleteClick(audienceId: string, audienceName: string) {
+    setDeleteError(null);
+    setDeletePreviewLoadingId(audienceId);
+
+    try {
+      const { affected_book_count } = await getAudienceAffectedBookCount(audienceId);
+
+      if (affected_book_count === 0) {
+        deleteMutation.mutate(audienceId);
+        return;
+      }
+
+      setPendingDelete({
+        id: audienceId,
+        name: audienceName,
+        affectedBookCount: affected_book_count,
+      });
+    } catch (err) {
+      setDeleteError(messageFromUnknownError(err));
+    } finally {
+      setDeletePreviewLoadingId(null);
+    }
+  }
+
+  function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    deleteMutation.mutate(pendingDelete.id);
   }
 
   return (
@@ -60,6 +111,11 @@ export function AudienceSettingsSection() {
           No se pudieron cargar los elementos.
         </p>
       ) : null}
+      {deleteError ? (
+        <p className="audience-settings__error" role="alert">
+          {deleteError}
+        </p>
+      ) : null}
 
       <ul className="audience-settings__list" aria-label="Público objetivo configurado">
         {audiences.map((audience) => (
@@ -74,10 +130,12 @@ export function AudienceSettingsSection() {
               type="button"
               variant="ghost"
               className="audience-settings__delete"
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate(audience.id)}
+              disabled={
+                deleteMutation.isPending || deletePreviewLoadingId === audience.id
+              }
+              onClick={() => void handleDeleteClick(audience.id, audience.name)}
             >
-              Eliminar
+              {deletePreviewLoadingId === audience.id ? 'Comprobando…' : 'Eliminar'}
             </Button>
           </li>
         ))}
@@ -100,6 +158,30 @@ export function AudienceSettingsSection() {
           Añadir elemento
         </Button>
       </form>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="Eliminar público objetivo"
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onClose={() => {
+          if (!deleteMutation.isPending) {
+            setPendingDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+      >
+        {pendingDelete ? (
+          <p>
+            Este público objetivo está asignado a {pendingDelete.affectedBookCount}{' '}
+            {pendingDelete.affectedBookCount === 1 ? 'libro' : 'libros'}. Si lo borras,
+            {pendingDelete.affectedBookCount === 1
+              ? ' ese libro se quedará'
+              : ' esos libros se quedarán'}{' '}
+            sin público objetivo. ¿Continuar?
+          </p>
+        ) : null}
+      </ConfirmModal>
     </Card>
   );
 }
