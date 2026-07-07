@@ -12,8 +12,8 @@ The stats endpoints SHALL return `audience_distribution` and `rating_distributio
 
 #### Scenario: Audience distribution by book audience
 
-- **WHEN** finished books in the period have audience values
-- **THEN** `audience_distribution` lists counts per audience (`young_adult`, `new_adult`, `adult`) and `unknown` for unset
+- **WHEN** finished books in the period have `audience_id` referencing user audiences
+- **THEN** `audience_distribution` lists counts per audience **name** and `unknown` for unset `audience_id`
 
 #### Scenario: Rating distribution for rated books
 
@@ -38,3 +38,8 @@ The Reading Stats dashboard SHALL render pie charts with text legends for genre,
 
 - **WHEN** a pie chart renders
 - **THEN** it exposes a descriptive accessible name summarizing the distribution without relying on color alone
+
+#### Scenario: Audience pie uses user labels
+
+- **WHEN** `audience_distribution` includes audience names such as `Juvenil` or `Adulto`
+- **THEN** the audience pie chart legend shows those names
