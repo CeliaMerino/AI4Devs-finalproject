@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DEFAULT_FORMAT_NAMES } from './formats.constants';
@@ -9,8 +10,10 @@ describe('FormatsService', () => {
   let repo: {
     count: jest.Mock;
     find: jest.Mock;
+    findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
+    remove: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
@@ -23,12 +26,13 @@ describe('FormatsService', () => {
     queryBuilder = {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'format-fisico' }),
+      getOne: jest.fn().mockResolvedValue(null),
     };
 
     repo = {
       count: jest.fn(),
       find: jest.fn(),
+      findOne: jest.fn(),
       create: jest.fn((value) => value),
       save: jest.fn(async (value) => {
         if (Array.isArray(value)) {
@@ -46,6 +50,7 @@ describe('FormatsService', () => {
           updatedAt: new Date('2026-01-01T00:00:00.000Z'),
         };
       }),
+      remove: jest.fn(),
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
 
@@ -85,6 +90,7 @@ describe('FormatsService', () => {
 
   it('resolves legacy read_format slug to owned format id', async () => {
     repo.count.mockResolvedValue(1);
+    queryBuilder.getOne.mockResolvedValue({ id: 'format-fisico' });
 
     const formatId = await service.resolveFormatIdByLegacySlug('user-1', 'fisico');
 
@@ -100,5 +106,30 @@ describe('FormatsService', () => {
 
     expect(formatId).toBeNull();
     expect(repo.count).not.toHaveBeenCalled();
+  });
+
+  it('creates a new format when name is unique', async () => {
+    const created = await service.createForUser('user-1', 'Audiolibro por capítulos');
+
+    expect(created.name).toBe('Audiolibro por capítulos');
+    expect(created.is_default).toBe(false);
+    expect(repo.save).toHaveBeenCalled();
+  });
+
+  it('rejects duplicate format names case-insensitively', async () => {
+    queryBuilder.getOne.mockResolvedValue({ id: 'existing' });
+
+    await expect(
+      service.createForUser('user-1', 'físico'),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('deletes an owned format', async () => {
+    const format = { id: 'format-1', userId: 'user-1', name: 'Ebook' } as Format;
+    repo.findOne.mockResolvedValue(format);
+
+    await service.deleteForUser('user-1', 'format-1');
+
+    expect(repo.remove).toHaveBeenCalledWith(format);
   });
 });

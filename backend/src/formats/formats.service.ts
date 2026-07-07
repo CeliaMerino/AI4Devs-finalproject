@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   DEFAULT_FORMAT_NAMES,
   LEGACY_NAME_BY_READ_FORMAT,
 } from './formats.constants';
+import { FormatResponseDto, toFormatResponse } from './dto/format-response.dto';
 import { Format } from './entities/format.entity';
 
 @Injectable()
@@ -17,6 +18,62 @@ export class FormatsService {
   async hasFormats(userId: string): Promise<boolean> {
     const count = await this.formatsRepo.count({ where: { userId } });
     return count > 0;
+  }
+
+  async listForUser(userId: string): Promise<FormatResponseDto[]> {
+    const rows = await this.formatsRepo.find({
+      where: { userId },
+      order: { name: 'ASC' },
+    });
+    return rows.map(toFormatResponse);
+  }
+
+  async createForUser(userId: string, name: string): Promise<FormatResponseDto> {
+    const duplicate = await this.formatsRepo
+      .createQueryBuilder('format')
+      .where('format.user_id = :userId', { userId })
+      .andWhere('LOWER(format.name) = LOWER(:name)', { name })
+      .getOne();
+
+    if (duplicate) {
+      throw new ConflictException({
+        statusCode: 409,
+        message: 'A format with this name already exists',
+        code: 'FORMAT_DUPLICATE',
+      });
+    }
+
+    const format = await this.formatsRepo.save(
+      this.formatsRepo.create({
+        userId,
+        name,
+        isDefault: false,
+      }),
+    );
+
+    return toFormatResponse(format);
+  }
+
+  async findOwnedById(userId: string, formatId: string): Promise<Format | null> {
+    return this.formatsRepo.findOne({
+      where: { id: formatId, userId },
+    });
+  }
+
+  async deleteForUser(userId: string, formatId: string): Promise<void> {
+    const format = await this.formatsRepo.findOne({
+      where: { id: formatId, userId },
+    });
+
+    if (!format) {
+      throw new NotFoundException({
+        statusCode: 404,
+        message: 'Format not found',
+        code: 'FORMAT_NOT_FOUND',
+      });
+    }
+
+    await this.formatsRepo.remove(format);
   }
 
   async seedDefaultsForUser(userId: string): Promise<Format[]> {
