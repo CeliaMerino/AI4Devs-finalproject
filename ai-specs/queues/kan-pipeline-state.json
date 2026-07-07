@@ -403,8 +403,8 @@
       "failed_step": null,
       "change_name": "kan-71-formats-model-migration",
       "branch": "feature/KAN-71-formats-model-migration",
-      "pr_url": null,
-      "pr_number": null,
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/55",
+      "pr_number": 55,
       "archived_at": null,
       "error": null
     }
