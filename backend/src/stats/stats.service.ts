@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from '../books/entities/book.entity';
 import { ReadingRecord } from '../books/entities/reading-record.entity';
+import { Audience } from '../audiences/entities/audience.entity';
 import type {
   AudienceCountDto,
   FormatCountDto,
@@ -188,9 +189,8 @@ export class StatsService {
       await this.distribution(userId, periodStart, periodEnd, 'rr.readFormat')
     ).map(({ label, count }) => ({ format: label, count }));
 
-    const audienceDistribution: AudienceCountDto[] = (
-      await this.distribution(userId, periodStart, periodEnd, 'b.audience')
-    ).map(({ label, count }) => ({ audience: label, count }));
+    const audienceDistribution: AudienceCountDto[] =
+      await this.audienceDistribution(userId, periodStart, periodEnd);
 
     const ratingDistribution: RatingCountDto[] =
       await this.ratingDistribution(userId, periodStart, periodEnd);
@@ -206,6 +206,32 @@ export class StatsService {
       audience_distribution: audienceDistribution,
       rating_distribution: ratingDistribution,
     };
+  }
+
+  private async audienceDistribution(
+    userId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<AudienceCountDto[]> {
+    const rows = await this.readingRepo
+      .createQueryBuilder('rr')
+      .innerJoin(Book, 'b', 'b.id = rr.bookId')
+      .leftJoin(Audience, 'a', 'a.id = b.audienceId')
+      .select('COALESCE(a.name, :unknown)', 'key')
+      .addSelect('COUNT(*)', 'count')
+      .where('b.userId = :userId', { userId })
+      .andWhere('rr.status = :status', { status: 'leido' })
+      .andWhere('rr.finishedOn >= :periodStart', { periodStart })
+      .andWhere('rr.finishedOn < :periodEnd', { periodEnd })
+      .groupBy('COALESCE(a.name, :unknown)')
+      .orderBy('COUNT(*)', 'DESC')
+      .setParameter('unknown', UNKNOWN_BUCKET)
+      .getRawMany<DistributionRow>();
+
+    return rows.map((row) => ({
+      audience: StatsService.audienceDistributionKey(row.key),
+      count: StatsService.toInt(row.count),
+    }));
   }
 
   private async distribution(
@@ -429,6 +455,15 @@ export class StatsService {
     if (!Number.isInteger(month) || month < 1 || month > 12) {
       throw new BadRequestException('month must be between 1 and 12');
     }
+  }
+
+  static audienceDistributionKey(
+    audienceName: string | null | undefined,
+  ): string {
+    if (!audienceName || audienceName === UNKNOWN_BUCKET) {
+      return UNKNOWN_BUCKET;
+    }
+    return audienceName;
   }
 
   static toInt(value: string | number | null | undefined): number {

@@ -220,7 +220,7 @@ export function StatsPage() {
                   ) : (
                     <ChartSlotPlaceholder
                       title="Distribución por público objetivo"
-                      subtitle="Young adult, new adult y adulto."
+                      subtitle="Etiquetas configuradas en Ajustes."
                       slotLabel="Gráfico de público objetivo"
                     />
                   )
