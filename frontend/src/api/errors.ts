@@ -17,7 +17,7 @@ export function messageFromApiError(status: number, body: ApiError): string {
     return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
   }
   if (body.code === 'AUDIENCE_DUPLICATE') {
-    return 'Ya tienes una audiencia con ese nombre.';
+    return 'Ya existe un elemento con ese nombre.';
   }
   if (body.code === 'FINISHED_BEFORE_STARTED') {
     return 'La fecha de fin no puede ser anterior a la de inicio.';

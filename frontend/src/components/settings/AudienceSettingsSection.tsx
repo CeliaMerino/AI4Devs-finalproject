@@ -38,7 +38,7 @@ export function AudienceSettingsSection() {
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
-      setFormError('Introduce un nombre para la audiencia.');
+      setFormError('Introduce un nombre para el elemento.');
       return;
     }
     setFormError(null);
@@ -46,20 +46,22 @@ export function AudienceSettingsSection() {
   }
 
   return (
-    <Card title="Audiencia" className="audience-settings">
+    <Card title="Público objetivo" className="audience-settings">
       <p className="audience-settings__intro">
-        Personaliza las etiquetas de audiencia para clasificar tus libros (infantil,
-        juvenil, adulto, etc.).
+        Personaliza las etiquetas de público objetivo para clasificar tus libros
+        (infantil, juvenil, adulto, etc.).
       </p>
 
-      {isLoading ? <p className="audience-settings__status">Cargando audiencias…</p> : null}
+      {isLoading ? (
+        <p className="audience-settings__status">Cargando elementos…</p>
+      ) : null}
       {error ? (
         <p className="audience-settings__error" role="alert">
-          No se pudieron cargar las audiencias.
+          No se pudieron cargar los elementos.
         </p>
       ) : null}
 
-      <ul className="audience-settings__list" aria-label="Audiencias configuradas">
+      <ul className="audience-settings__list" aria-label="Público objetivo configurado">
         {audiences.map((audience) => (
           <li key={audience.id} className="audience-settings__item">
             <span className="audience-settings__name">
@@ -83,7 +85,7 @@ export function AudienceSettingsSection() {
 
       <form className="audience-settings__form" onSubmit={handleSubmit}>
         <Input
-          label="Nueva audiencia"
+          label="Nuevo elemento"
           value={name}
           maxLength={100}
           placeholder="Ej. Young Adult"
@@ -95,7 +97,7 @@ export function AudienceSettingsSection() {
           </p>
         ) : null}
         <Button type="submit" disabled={createMutation.isPending}>
-          Añadir audiencia
+          Añadir elemento
         </Button>
       </form>
     </Card>
