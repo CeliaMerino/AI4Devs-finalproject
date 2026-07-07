@@ -3,6 +3,7 @@ import {
   CatalogEditionDto,
   CatalogSearchResponseDto,
 } from '../dto/catalog-edition.dto';
+import { GenreNormalizerService } from '../genre-normalizer.service';
 import type { CatalogIsbnLookupResult } from './catalog-isbn-lookup.types';
 import { OpenLibraryEnrichmentService } from './open-library-enrichment.service';
 import { retryWithBackoff } from './retry-with-backoff.util';
@@ -19,15 +20,17 @@ export class CatalogService {
     private readonly openLibrary: OpenLibraryClient,
     private readonly googleBooks: GoogleBooksClient,
     private readonly openLibraryEnrichment: OpenLibraryEnrichmentService,
+    private readonly genreNormalizer: GenreNormalizerService,
   ) {}
 
   async search(query: string, limit: number): Promise<CatalogSearchResponseDto> {
     try {
       const olItems = await this.openLibrary.search(query, limit);
       if (olItems.length > 0) {
-        const items = await Promise.all(
+        const enriched = await Promise.all(
           olItems.map((item) => this.fillMissingGenre(item)),
         );
+        const items = enriched.map((item) => this.normalizeEditionGenre(item));
         return { items, source: 'open_library' };
       }
       this.logger.debug(`Open Library returned 0 hits for "${query}"`);
@@ -40,7 +43,10 @@ export class CatalogService {
     try {
       const gbItems = await this.googleBooks.search(query, limit);
       if (gbItems.length > 0) {
-        return { items: gbItems, source: 'google_books' };
+        return {
+          items: gbItems.map((item) => this.normalizeEditionGenre(item)),
+          source: 'google_books',
+        };
       }
     } catch (err) {
       this.logger.warn(
@@ -106,7 +112,7 @@ export class CatalogService {
       page_count: null,
       ...edition,
     });
-    return enriched.genre;
+    return this.genreNormalizer.normalize(enriched.genre);
   }
 
   /** @deprecated Use resolveMissingGenre */
@@ -130,10 +136,10 @@ export class CatalogService {
       return null;
     }
 
-    let genre = gbEdition?.genre ?? olEdition?.genre ?? null;
+    let genre = this.genreNormalizer.normalize(gbEdition?.genre ?? olEdition?.genre);
     if (!genre && olEdition) {
       const enriched = await this.fillMissingGenre(olEdition);
-      genre = enriched.genre;
+      genre = this.genreNormalizer.normalize(enriched.genre);
     }
 
     return {
@@ -163,6 +169,13 @@ export class CatalogService {
     }
 
     return { ...afterGoogleBooks, genre };
+  }
+
+  private normalizeEditionGenre(edition: CatalogEditionDto): CatalogEditionDto {
+    return {
+      ...edition,
+      genre: this.genreNormalizer.normalize(edition.genre),
+    };
   }
 
   private async fillGenreFromGoogleBooksIfMissing(

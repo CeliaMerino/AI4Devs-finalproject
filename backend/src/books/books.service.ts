@@ -26,6 +26,7 @@ import {
 import { GoogleBooksClient } from './catalog/google-books.client';
 import { CatalogService } from './catalog/catalog.service';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
+import { GenreNormalizerService } from './genre-normalizer.service';
 import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
@@ -43,6 +44,7 @@ export class BooksService {
     private readonly openLibraryEnrichment: OpenLibraryEnrichmentService,
     private readonly googleBooksClient: GoogleBooksClient,
     private readonly catalogService: CatalogService,
+    private readonly genreNormalizer: GenreNormalizerService,
     @Inject(forwardRef(() => TbrService))
     private readonly tbrService: TbrService,
   ) {}
@@ -279,7 +281,7 @@ export class BooksService {
         dto.external_provider_id,
       );
       if (volume) {
-        genre = genre ?? volume.genre;
+        genre = genre ?? this.genreNormalizer.normalize(volume.genre);
         page_count = page_count ?? volume.page_count;
       }
     }

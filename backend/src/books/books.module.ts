@@ -12,6 +12,7 @@ import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.
 import { OpenLibraryCoversService } from './catalog/open-library-covers.service';
 import { GoogleBooksClient } from './catalog/google-books.client';
 import { OpenLibraryClient } from './catalog/open-library.client';
+import { GenreNormalizerService } from './genre-normalizer.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
 
@@ -38,6 +39,7 @@ import { ReadingRecord } from './entities/reading-record.entity';
     GoogleBooksCoversService,
     OpenLibraryClient,
     GoogleBooksClient,
+    GenreNormalizerService,
   ],
   exports: [BooksService, CatalogService, CatalogRateLimiter],
 })

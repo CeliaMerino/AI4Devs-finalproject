@@ -17,16 +17,23 @@ describe('CatalogService', () => {
   let openLibrary: { search: jest.Mock };
   let googleBooks: { search: jest.Mock; lookupGenreByIsbn: jest.Mock };
   let openLibraryEnrichment: { lookupGenreFromProviderId: jest.Mock };
+  let genreNormalizer: { normalize: jest.Mock };
   let service: CatalogService;
 
   beforeEach(() => {
     openLibrary = { search: jest.fn() };
     googleBooks = { search: jest.fn(), lookupGenreByIsbn: jest.fn() };
     openLibraryEnrichment = { lookupGenreFromProviderId: jest.fn() };
+    genreNormalizer = {
+      normalize: jest
+        .fn()
+        .mockImplementation((value: string | null | undefined) => value ?? null),
+    };
     service = new CatalogService(
       openLibrary as never,
       googleBooks as never,
       openLibraryEnrichment as never,
+      genreNormalizer as never,
     );
   });
 
@@ -39,6 +46,7 @@ describe('CatalogService', () => {
     expect(result.items).toHaveLength(1);
     expect(googleBooks.search).not.toHaveBeenCalled();
     expect(googleBooks.lookupGenreByIsbn).not.toHaveBeenCalled();
+    expect(genreNormalizer.normalize).toHaveBeenCalledWith('Fiction');
   });
 
   it('fills genre from Google Books when Open Library search omits subject', async () => {
@@ -46,11 +54,15 @@ describe('CatalogService', () => {
       { ...olEdition, genre: null },
     ]);
     googleBooks.lookupGenreByIsbn.mockResolvedValue('Science Fiction');
+    genreNormalizer.normalize.mockImplementation((value: string | null | undefined) => {
+      if (value === 'Science Fiction') return 'Ciencia ficción';
+      return value ?? null;
+    });
 
     const result = await service.search('le guin', 20);
 
     expect(googleBooks.lookupGenreByIsbn).toHaveBeenCalledWith('9780618640157');
-    expect(result.items[0]?.genre).toBe('Science Fiction');
+    expect(result.items[0]?.genre).toBe('Ciencia ficción');
   });
 
   it('keeps genre null when Google Books genre lookup misses', async () => {
@@ -77,6 +89,10 @@ describe('CatalogService', () => {
     openLibraryEnrichment.lookupGenreFromProviderId.mockResolvedValue(
       'Science fiction',
     );
+    genreNormalizer.normalize.mockImplementation((value: string | null | undefined) => {
+      if (value === 'Science fiction') return 'Ciencia ficción';
+      return value ?? null;
+    });
 
     const result = await service.search('le guin', 20);
 
@@ -84,7 +100,7 @@ describe('CatalogService', () => {
     expect(openLibraryEnrichment.lookupGenreFromProviderId).toHaveBeenCalledWith(
       '/works/OL1W',
     );
-    expect(result.items[0]?.genre).toBe('Science fiction');
+    expect(result.items[0]?.genre).toBe('Ciencia ficción');
   });
 
   it('does not call Open Library work lookup when Google Books fills genre', async () => {
@@ -97,6 +113,15 @@ describe('CatalogService', () => {
 
     expect(openLibraryEnrichment.lookupGenreFromProviderId).not.toHaveBeenCalled();
     expect(result.items[0]?.genre).toBe('Fantasy');
+  });
+
+  it('returns null when genre has no taxonomy match', async () => {
+    openLibrary.search.mockResolvedValue([{ ...olEdition, genre: 'Cooking' }]);
+    genreNormalizer.normalize.mockReturnValue(null);
+
+    const result = await service.search('cooking', 10);
+
+    expect(result.items[0]?.genre).toBeNull();
   });
 
   it('falls back to Google Books when Open Library is empty', async () => {
@@ -176,6 +201,10 @@ describe('CatalogService', () => {
       openLibraryEnrichment.lookupGenreFromProviderId.mockResolvedValue(
         'Historical fiction',
       );
+      genreNormalizer.normalize.mockImplementation((value: string | null | undefined) => {
+        if (value === 'Historical fiction') return 'Histórica';
+        return value ?? null;
+      });
 
       const result = await service.lookupByIsbn('9780618640157');
 
@@ -185,7 +214,7 @@ describe('CatalogService', () => {
       );
       expect(result).toEqual({
         cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
-        genre: 'Historical fiction',
+        genre: 'Histórica',
       });
     });
 
@@ -199,13 +228,17 @@ describe('CatalogService', () => {
       ]);
       googleBooks.search.mockResolvedValue([]);
       googleBooks.lookupGenreByIsbn.mockResolvedValue('Fantasy');
+      genreNormalizer.normalize.mockImplementation((value: string | null | undefined) => {
+        if (value === 'Fantasy') return 'Fantasía';
+        return value ?? null;
+      });
 
       const result = await service.lookupByIsbn('9780618640157');
 
       expect(googleBooks.lookupGenreByIsbn).toHaveBeenCalledWith('9780618640157');
       expect(result).toEqual({
         cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
-        genre: 'Fantasy',
+        genre: 'Fantasía',
       });
     });
 
@@ -260,6 +293,10 @@ describe('CatalogService', () => {
           genre: 'Fantasy',
         },
       ]);
+      genreNormalizer.normalize.mockImplementation((value: string | null | undefined) => {
+        if (value === 'Fantasy') return 'Fantasía';
+        return value ?? null;
+      });
 
       const result = await service.lookupByTitleAuthor(
         'The Hobbit',
@@ -276,7 +313,7 @@ describe('CatalogService', () => {
       );
       expect(result).toEqual({
         cover_image_url: 'https://covers.openlibrary.org/b/id/3-L.jpg',
-        genre: 'Fantasy',
+        genre: 'Fantasía',
       });
     });
 
