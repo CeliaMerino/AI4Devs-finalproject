@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -60,6 +61,11 @@ export class PatchBookDto {
   @ValidateIf((_o, v) => v !== null)
   @IsEnum(['young_adult', 'new_adult', 'adult'])
   audience?: AudienceType | null;
+
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsUUID()
+  audience_id?: string | null;
 
   @IsOptional()
   @ValidateIf((_o, v) => v !== null)

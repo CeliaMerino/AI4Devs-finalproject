@@ -2,6 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ListsModule } from '../lists/lists.module';
+import { AudiencesModule } from '../audiences/audiences.module';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 import { CatalogService } from './catalog/catalog.service';
@@ -27,6 +28,7 @@ import { ReadingRecord } from './entities/reading-record.entity';
     }),
     TypeOrmModule.forFeature([Book, ReadingRecord]),
     forwardRef(() => ListsModule),
+    AudiencesModule,
   ],
   controllers: [BooksController],
   providers: [

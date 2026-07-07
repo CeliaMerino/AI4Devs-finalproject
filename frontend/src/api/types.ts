@@ -62,6 +62,7 @@ export interface Book {
   external_provider_id: string | null;
   notes: string | null;
   audience: AudienceType | null;
+  audience_id: string | null;
   created_at: string;
   updated_at: string;
   reading_status?: ReadingStatus;
@@ -262,6 +263,7 @@ export interface CreateBookPayload {
   external_provider_id?: string | null;
   notes?: string | null;
   audience?: AudienceType | null;
+  audience_id?: string | null;
 }
 
 export interface PatchBookPayload {
@@ -273,6 +275,7 @@ export interface PatchBookPayload {
   series_name?: string | null;
   publication_year?: number | null;
   audience?: AudienceType | null;
+  audience_id?: string | null;
   notes?: string | null;
 }
 

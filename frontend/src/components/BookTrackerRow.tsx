@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { patchBook, patchReadingRecord } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
 import type {
-  AudienceType,
   Book,
   ReadingRecordPatchedResponse,
   ReadingRecordResource,
@@ -65,8 +64,8 @@ export function BookTrackerRow({
   });
 
   const bookMutation = useMutation({
-    mutationFn: (audience: AudienceType | null) =>
-      patchBook(book.id, { audience }),
+    mutationFn: (audienceId: string | null) =>
+      patchBook(book.id, { audience_id: audienceId }),
     onSuccess: () => {
       setFieldError(null);
       onBookUpdated();
@@ -99,7 +98,7 @@ export function BookTrackerRow({
           id={`audience-${book.id}`}
           label={`Público objetivo de ${book.title}`}
           className="audience-select--inline"
-          value={book.audience}
+          value={book.audience_id}
           disabled={mutation.isPending || bookMutation.isPending}
           onChange={(next) => bookMutation.mutate(next)}
         />

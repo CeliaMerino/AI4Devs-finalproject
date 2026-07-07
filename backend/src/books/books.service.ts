@@ -27,6 +27,7 @@ import { GoogleBooksClient } from './catalog/google-books.client';
 import { CatalogService } from './catalog/catalog.service';
 import { OpenLibraryEnrichmentService } from './catalog/open-library-enrichment.service';
 import { GenreNormalizerService } from './genre-normalizer.service';
+import { AudiencesService } from '../audiences/audiences.service';
 import { TbrService } from '../lists/tbr.service';
 import { Book } from './entities/book.entity';
 import { ReadingRecord } from './entities/reading-record.entity';
@@ -45,6 +46,7 @@ export class BooksService {
     private readonly googleBooksClient: GoogleBooksClient,
     private readonly catalogService: CatalogService,
     private readonly genreNormalizer: GenreNormalizerService,
+    private readonly audiencesService: AudiencesService,
     @Inject(forwardRef(() => TbrService))
     private readonly tbrService: TbrService,
   ) {}
@@ -201,6 +203,7 @@ export class BooksService {
 
   async create(userId: string, dto: CreateBookDto): Promise<BookCreatedResponseDto> {
     await this.assertNotDuplicate(userId, dto);
+    const audienceId = await this.resolveAudienceId(userId, dto.audience_id);
     const metadata = await this.resolveMetadata(dto);
 
     const book = this.booksRepo.create({
@@ -218,6 +221,7 @@ export class BooksService {
       externalProviderId: dto.external_provider_id ?? null,
       notes: dto.notes ?? null,
       audience: dto.audience ?? null,
+      audienceId,
     });
 
     const saved = await this.booksRepo.save(book);
@@ -369,6 +373,9 @@ export class BooksService {
     if (dto.audience !== undefined) {
       book.audience = dto.audience;
     }
+    if (dto.audience_id !== undefined) {
+      book.audienceId = await this.resolveAudienceId(userId, dto.audience_id);
+    }
     if (dto.notes !== undefined) {
       book.notes = dto.notes;
     }
@@ -387,6 +394,7 @@ export class BooksService {
       dto.series_name !== undefined ||
       dto.publication_year !== undefined ||
       dto.audience !== undefined ||
+      dto.audience_id !== undefined ||
       dto.notes !== undefined;
     if (!hasField) {
       throw new BadRequestException('At least one field is required');
@@ -410,8 +418,29 @@ export class BooksService {
       external_provider_id: book.externalProviderId,
       notes: book.notes,
       audience: book.audience,
+      audience_id: book.audienceId,
       created_at: book.createdAt.toISOString(),
       updated_at: book.updatedAt.toISOString(),
     };
+  }
+
+  private async resolveAudienceId(
+    userId: string,
+    audienceId: string | null | undefined,
+  ): Promise<string | null> {
+    if (audienceId === undefined || audienceId === null) {
+      return null;
+    }
+
+    const audience = await this.audiencesService.findOwnedById(userId, audienceId);
+    if (!audience) {
+      throw new BadRequestException({
+        statusCode: 400,
+        message: 'Audience not found for this user',
+        code: 'AUDIENCE_NOT_FOUND',
+      });
+    }
+
+    return audience.id;
   }
 }
