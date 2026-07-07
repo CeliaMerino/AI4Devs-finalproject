@@ -97,7 +97,7 @@ export function BookTrackerRow({
       <td className="col-audience audience-cell">
         <AudienceSelect
           id={`audience-${book.id}`}
-          label={`Audience for ${book.title}`}
+          label={`Público objetivo de ${book.title}`}
           className="audience-select--inline"
           value={book.audience}
           disabled={mutation.isPending || bookMutation.isPending}

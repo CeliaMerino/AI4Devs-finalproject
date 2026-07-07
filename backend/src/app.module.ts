@@ -15,6 +15,7 @@ import { StatsModule } from './stats/stats.module';
 import { ImportModule } from './import/import.module';
 import { ImportJob } from './import/entities/import-job.entity';
 import { Audience } from './audiences/entities/audience.entity';
+import { AudiencesModule } from './audiences/audiences.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -36,6 +37,7 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
     AuthModule,
+    AudiencesModule,
     BooksModule,
     ListsModule,
     GoalsModule,

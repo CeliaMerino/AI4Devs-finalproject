@@ -219,9 +219,9 @@ export function StatsPage() {
                     />
                   ) : (
                     <ChartSlotPlaceholder
-                      title="Distribución por audiencia"
+                      title="Distribución por público objetivo"
                       subtitle="Young adult, new adult y adulto."
-                      slotLabel="Gráfico de audiencia"
+                      slotLabel="Gráfico de público objetivo"
                     />
                   )
                 }

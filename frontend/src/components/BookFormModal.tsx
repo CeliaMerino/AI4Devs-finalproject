@@ -225,7 +225,7 @@ export function BookFormModal({
 
           <AudienceSelect
             id={`${formId}-audience`}
-            label="Audiencia"
+            label="Público objetivo"
             value={form.audience}
             disabled={saving}
             onChange={(value) => setField('audience', value)}

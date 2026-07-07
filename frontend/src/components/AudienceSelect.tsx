@@ -16,7 +16,7 @@ export function AudienceSelect({
   onChange,
   disabled,
   id = 'book-audience',
-  label = 'Audience',
+  label = 'Público objetivo',
   className = '',
 }: AudienceSelectProps) {
   return (

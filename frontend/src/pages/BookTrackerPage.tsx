@@ -136,7 +136,7 @@ export function BookTrackerPage() {
                   Género
                 </th>
                 <th scope="col" className="col-audience">
-                  Audiencia
+                  Público objetivo
                 </th>
                 <th scope="col" className="col-pages">
                   Páginas

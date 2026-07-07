@@ -3,7 +3,7 @@
   "queue_file": "ai-specs/queues/kan-implementation-queue.yaml",
   "started_at": "2026-07-01T19:00:00Z",
   "last_completed": "KAN-65",
-  "current_ticket": null,
+  "current_ticket": "KAN-66",
   "tickets": {
     "KAN-18": {
       "status": "done",
@@ -356,5 +356,15 @@
       "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/50",
       "pr_number": 50,
       "archived_at": "2026-07-07T13:10:00Z",
+      "error": null
+    },
+    "KAN-66": {
+      "status": "awaiting_merge",
+      "failed_step": null,
+      "change_name": "kan-66-audiences-settings-crud",
+      "branch": "feature/KAN-66-audiences-settings-crud",
+      "pr_url": "https://github.com/CeliaMerino/AI4Devs-finalproject/pull/51",
+      "pr_number": 51,
+      "archived_at": null,
       "error": null
     }

@@ -2,6 +2,7 @@ import { ApiRequestError } from './errors';
 import type {
   AnnualGoalResponse,
   ApiError,
+  Audience,
   AudienceType,
   Book,
   BookCreatedResponse,
@@ -68,6 +69,21 @@ export async function devLogin(email: string) {
     '/auth/dev-login',
     { method: 'POST', body: JSON.stringify({ email }) },
   );
+}
+
+export async function listAudiences(): Promise<Audience[]> {
+  return request('/audiences');
+}
+
+export async function createAudience(name: string): Promise<Audience> {
+  return request('/audiences', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteAudience(audienceId: string): Promise<void> {
+  return request(`/audiences/${audienceId}`, { method: 'DELETE' });
 }
 
 export async function searchCatalog(
