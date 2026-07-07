@@ -17,6 +17,7 @@ export class BookDto {
   external_provider_id: string | null;
   notes: string | null;
   audience: AudienceType | null;
+  audience_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -3,7 +3,6 @@ import type {
   AnnualGoalResponse,
   ApiError,
   Audience,
-  AudienceType,
   Book,
   BookCreatedResponse,
   CatalogEdition,
@@ -294,7 +293,7 @@ export async function importGoodreadsCsv(
 export function catalogEditionToCreatePayload(
   edition: CatalogEdition,
   coverUrl?: string | null,
-  audience?: AudienceType | null,
+  audienceId?: string | null,
 ): CreateBookPayload {
   return {
     title: edition.title,
@@ -306,6 +305,6 @@ export function catalogEditionToCreatePayload(
     genre: edition.genre,
     data_source: edition.data_source,
     external_provider_id: edition.external_provider_id,
-    audience: audience ?? null,
+    audience_id: audienceId ?? null,
   };
 }

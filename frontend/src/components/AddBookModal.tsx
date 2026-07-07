@@ -6,7 +6,7 @@ import {
   searchCatalog,
 } from '../api/client';
 import { messageFromUnknownError } from '../api/errors';
-import type { AudienceType, CatalogEdition, CoverOption } from '../api/types';
+import type { CatalogEdition, CoverOption } from '../api/types';
 import { AudienceSelect } from './AudienceSelect';
 import { CoverPicker } from './CoverPicker';
 import './AddBookModal.css';
@@ -33,7 +33,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
   const [searchLoading, setSearchLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [audience, setAudience] = useState<AudienceType | null>(null);
+  const [audienceId, setAudienceId] = useState<string | null>(null);
 
   const resetState = useCallback(() => {
     setStep('search');
@@ -48,7 +48,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
     setSearchLoading(false);
     setSaving(false);
     setError(null);
-    setAudience(null);
+    setAudienceId(null);
   }, []);
 
   useEffect(() => {
@@ -123,6 +123,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
   const handleSelectEdition = useCallback(
     (edition: CatalogEdition) => {
       setSelectedEdition(edition);
+      setAudienceId(null);
       setStep('covers');
       setError(null);
       void loadCovers(edition);
@@ -151,7 +152,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
 
     try {
       await createBook(
-        catalogEditionToCreatePayload(selectedEdition, coverUrl, audience),
+        catalogEditionToCreatePayload(selectedEdition, coverUrl, audienceId),
       );
       onSaved();
       onClose();
@@ -160,7 +161,7 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
     } finally {
       setSaving(false);
     }
-  }, [selectedEdition, selectedCover, covers.length, audience, onSaved, onClose]);
+  }, [selectedEdition, selectedCover, covers.length, audienceId, onSaved, onClose]);
 
   const showManualCreate =
     step === 'search' &&
@@ -276,8 +277,8 @@ export function AddBookModal({ open, onClose, onSaved, onCreateManual }: AddBook
             <AudienceSelect
               id="add-book-audience"
               label="Público objetivo"
-              value={audience}
-              onChange={setAudience}
+              value={audienceId}
+              onChange={setAudienceId}
               disabled={saving}
             />
           </>

@@ -779,7 +779,7 @@ components:
       type: string
       enum: [open_library, google_books, goodreads, manual]
 
-    Audience:
+    BookAudience:
       type: string
       nullable: true
       enum: [young_adult, new_adult, adult]
@@ -983,7 +983,11 @@ components:
           type: string
           nullable: true
         audience:
-          $ref: '#/components/schemas/Audience'
+          $ref: '#/components/schemas/BookAudience'
+        audience_id:
+          type: string
+          format: uuid
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -1062,7 +1066,11 @@ components:
           type: string
           nullable: true
         audience:
-          $ref: '#/components/schemas/Audience'
+          $ref: '#/components/schemas/BookAudience'
+        audience_id:
+          type: string
+          format: uuid
+          nullable: true
 
     PatchBookRequest:
       type: object
@@ -1094,7 +1102,11 @@ components:
           maximum: 2100
           nullable: true
         audience:
-          $ref: '#/components/schemas/Audience'
+          $ref: '#/components/schemas/BookAudience'
+        audience_id:
+          type: string
+          format: uuid
+          nullable: true
         notes:
           type: string
           nullable: true

@@ -55,6 +55,12 @@ export class AudiencesService {
     return toAudienceResponse(audience);
   }
 
+  async findOwnedById(userId: string, audienceId: string): Promise<Audience | null> {
+    return this.audiencesRepo.findOne({
+      where: { id: audienceId, userId },
+    });
+  }
+
   async deleteForUser(userId: string, audienceId: string): Promise<void> {
     const audience = await this.audiencesRepo.findOne({
       where: { id: audienceId, userId },

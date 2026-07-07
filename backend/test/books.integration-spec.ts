@@ -2,6 +2,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AudiencesModule } from '../src/audiences/audiences.module';
+import { Audience } from '../src/audiences/entities/audience.entity';
 import { AuthModule } from '../src/auth/auth.module';
 import { BooksModule } from '../src/books/books.module';
 import { Book } from '../src/books/entities/book.entity';
@@ -28,11 +30,12 @@ describe('Books API (integration)', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry],
+          entities: [User, Book, ReadingRecord, MonthlyTbrList, TbrEntry, Audience],
           synchronize: true,
         }),
         UsersModule,
         AuthModule,
+        AudiencesModule,
         BooksModule,
         ListsModule,
       ],
@@ -199,6 +202,85 @@ describe('Books API (integration)', () => {
       (e: { book_id: string }) => e.book_id === bookId,
     );
     expect(entry?.completed).toBe(true);
+  });
+
+  it('POST /v1/books accepts optional audience_id', async () => {
+    const audiences = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const audienceId = audiences.body[0].id as string;
+
+    const res = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Audience ID Test Book',
+        authors: 'Test Author',
+        data_source: 'manual',
+        audience_id: audienceId,
+      })
+      .expect(201);
+
+    expect(res.body.book.audience_id).toBe(audienceId);
+  });
+
+  it('POST /v1/books rejects foreign audience_id', async () => {
+    const otherAudiences = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(200);
+
+    const foreignAudienceId = otherAudiences.body[0].id as string;
+
+    const res = await request(app.getHttpServer())
+      .post('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Foreign Audience Book',
+        authors: 'Test Author',
+        data_source: 'manual',
+        audience_id: foreignAudienceId,
+      })
+      .expect(400);
+
+    expect(res.body.code).toBe('AUDIENCE_NOT_FOUND');
+  });
+
+  it('PATCH /v1/books/{bookId} updates audience_id', async () => {
+    const audiences = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const audienceId = audiences.body[1].id as string;
+
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ audience_id: audienceId })
+      .expect(200);
+
+    expect(res.body.audience_id).toBe(audienceId);
+
+    const list = await request(app.getHttpServer())
+      .get('/v1/books')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const item = list.body.find((b: { id: string }) => b.id === bookId);
+    expect(item.audience_id).toBe(audienceId);
+  });
+
+  it('PATCH /v1/books/{bookId} clears audience_id with null', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/books/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ audience_id: null })
+      .expect(200);
+
+    expect(res.body.audience_id).toBeNull();
   });
 
   it('POST /v1/books accepts optional audience', async () => {
