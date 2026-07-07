@@ -9,7 +9,9 @@ import type { GoodreadsMappedRow } from './goodreads-import.types';
 
 describe('GoodreadsImportProcessor', () => {
   let processor: GoodreadsImportProcessor;
-  let booksRepo: jest.Mocked<Pick<Repository<Book>, 'find' | 'create' | 'save'>>;
+  let booksRepo: jest.Mocked<
+    Pick<Repository<Book>, 'find' | 'findOne' | 'create' | 'save'>
+  >;
   let readingRepo: jest.Mocked<Pick<Repository<ReadingRecord>, 'create' | 'save'>>;
   let catalogEnrichment: jest.Mocked<
     Pick<ImportCatalogEnrichmentService, 'enrichBook'>
@@ -39,6 +41,11 @@ describe('GoodreadsImportProcessor', () => {
   beforeEach(async () => {
     booksRepo = {
       find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn().mockResolvedValue({
+        id: 'book-1',
+        coverImageUrl: null,
+        genre: null,
+      } as Book),
       create: jest.fn((value) => value as Book),
       save: jest.fn(async (value) => ({ ...value, id: 'book-1' }) as Book),
     };
@@ -92,6 +99,7 @@ describe('GoodreadsImportProcessor', () => {
 
     const result = await processor.processImport('user-1', [sampleRow], []);
 
+    expect(catalogEnrichment.enrichBook).toHaveBeenCalledTimes(2);
     expect(result.enrichment_failed).toEqual([
       expect.objectContaining({
         row_number: 2,
@@ -100,6 +108,28 @@ describe('GoodreadsImportProcessor', () => {
       }),
     ]);
     expect(result.meta.enrichment_failed_count).toBe(1);
+  });
+
+  it('clears enrichment failures when retry pass succeeds', async () => {
+    catalogEnrichment.enrichBook
+      .mockResolvedValueOnce({
+        book: { id: 'book-1', coverImageUrl: null, genre: null } as Book,
+        enrichment_failed: true,
+      })
+      .mockResolvedValueOnce({
+        book: {
+          id: 'book-1',
+          coverImageUrl: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+          genre: 'Fantasía',
+        } as Book,
+        enrichment_failed: false,
+      });
+
+    const result = await processor.processImport('user-1', [sampleRow], []);
+
+    expect(catalogEnrichment.enrichBook).toHaveBeenCalledTimes(2);
+    expect(result.enrichment_failed).toEqual([]);
+    expect(result.meta.enrichment_failed_count).toBe(0);
   });
 
   it('skips rows that already exist in the library', async () => {

@@ -9,7 +9,7 @@ describe('ImportCatalogEnrichmentService', () => {
     Pick<CatalogService, 'lookupByIsbn' | 'lookupByTitleAuthor'>
   >;
   let rateLimiter: jest.Mocked<Pick<CatalogRateLimiter, 'throttle'>>;
-  let booksRepo: jest.Mocked<Pick<Repository<Book>, 'save'>>;
+  let booksRepo: jest.Mocked<Pick<Repository<Book>, 'save' | 'find'>>;
   let service: ImportCatalogEnrichmentService;
 
   const baseBook = (): Book =>
@@ -30,7 +30,10 @@ describe('ImportCatalogEnrichmentService', () => {
       lookupByTitleAuthor: jest.fn(),
     };
     rateLimiter = { throttle: jest.fn().mockResolvedValue(undefined) };
-    booksRepo = { save: jest.fn(async (book) => book) };
+    booksRepo = {
+      save: jest.fn(async (book) => book),
+      find: jest.fn(),
+    };
     service = new ImportCatalogEnrichmentService(
       catalog as unknown as CatalogService,
       rateLimiter as unknown as CatalogRateLimiter,
@@ -81,6 +84,59 @@ describe('ImportCatalogEnrichmentService', () => {
     expect(result.book.coverImageUrl).toBe(
       'https://covers.openlibrary.org/b/id/2-L.jpg',
     );
+  });
+
+  it('falls back to title+author when ISBN lookup returns no genre', async () => {
+    catalog.lookupByIsbn.mockResolvedValue({
+      cover_image_url: null,
+      genre: null,
+    });
+    catalog.lookupByTitleAuthor.mockResolvedValue({
+      cover_image_url: 'https://covers.openlibrary.org/b/id/3-L.jpg',
+      genre: 'Romance',
+    });
+
+    const result = await service.enrichBook(baseBook());
+
+    expect(catalog.lookupByIsbn).toHaveBeenCalledWith('9780618640157');
+    expect(catalog.lookupByTitleAuthor).toHaveBeenCalledWith(
+      'The Hobbit',
+      'J.R.R. Tolkien',
+    );
+    expect(result.book.genre).toBe('Romance');
+    expect(result.book.coverImageUrl).toBe(
+      'https://covers.openlibrary.org/b/id/3-L.jpg',
+    );
+  });
+
+  it('still calls title+author when ISBN lookup fills genre but not cover', async () => {
+    catalog.lookupByIsbn.mockResolvedValue({
+      cover_image_url: null,
+      genre: 'Fantasy',
+    });
+    catalog.lookupByTitleAuthor.mockResolvedValue({
+      cover_image_url: 'https://covers.openlibrary.org/b/id/9-L.jpg',
+      genre: null,
+    });
+
+    const result = await service.enrichBook(baseBook());
+
+    expect(catalog.lookupByTitleAuthor).toHaveBeenCalled();
+    expect(result.book.genre).toBe('Fantasy');
+    expect(result.book.coverImageUrl).toBe(
+      'https://covers.openlibrary.org/b/id/9-L.jpg',
+    );
+  });
+
+  it('does not call title+author when ISBN lookup already fills genre and cover', async () => {
+    catalog.lookupByIsbn.mockResolvedValue({
+      cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+      genre: 'Fantasy',
+    });
+
+    await service.enrichBook(baseBook());
+
+    expect(catalog.lookupByTitleAuthor).not.toHaveBeenCalled();
   });
 
   it('skips catalog lookup when book is already complete', async () => {
@@ -143,5 +199,36 @@ describe('ImportCatalogEnrichmentService', () => {
     expect(result.book).toBe(book);
     expect(result.enrichment_failed).toBe(true);
     expect(booksRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('reenriches incomplete books for a user', async () => {
+    booksRepo.find = jest.fn().mockResolvedValue([
+      {
+        id: 'book-1',
+        title: 'The Hobbit',
+        authors: 'J.R.R. Tolkien',
+        coverImageUrl: null,
+        genre: null,
+        isbn13: '9780618640157',
+      },
+      {
+        id: 'book-2',
+        coverImageUrl: 'https://example.com/cover.jpg',
+        genre: 'Fantasía',
+      },
+    ]);
+    catalog.lookupByIsbn.mockResolvedValue({
+      cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+      genre: 'Fantasía',
+    });
+
+    const summary = await service.reenrichIncompleteBooks('user-1');
+
+    expect(summary).toEqual({
+      processed: 1,
+      enriched: 1,
+      still_failed: 0,
+    });
+    expect(catalog.lookupByIsbn).toHaveBeenCalledTimes(1);
   });
 });

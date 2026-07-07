@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { CatalogEditionDto } from '../dto/catalog-edition.dto';
 import { CatalogProvider } from './catalog-provider.interface';
+import { isTransientCatalogError } from './catalog-error.util';
 
 interface GoogleVolume {
   id?: string;
@@ -111,7 +112,10 @@ export class GoogleBooksClient implements CatalogProvider {
     try {
       const items = await this.search(`isbn:${normalized}`, 1);
       return items[0]?.genre ?? null;
-    } catch {
+    } catch (err) {
+      if (isTransientCatalogError(err)) {
+        throw err;
+      }
       return null;
     }
   }

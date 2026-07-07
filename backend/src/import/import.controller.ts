@@ -43,4 +43,10 @@ export class ImportController {
   ) {
     return this.importService.getImportJob(req.user.userId, jobId);
   }
+
+  @Post('reenrich-pending')
+  @HttpCode(200)
+  reenrichPending(@Req() req: RequestWithUser) {
+    return this.importService.reenrichPendingBooks(req.user.userId);
+  }
 }
