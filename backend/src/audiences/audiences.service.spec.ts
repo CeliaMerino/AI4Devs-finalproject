@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DEFAULT_AUDIENCE_NAMES } from './audiences.constants';
@@ -9,16 +10,48 @@ describe('AudiencesService', () => {
   let repo: {
     count: jest.Mock;
     find: jest.Mock;
+    findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
+    remove: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+  let queryBuilder: {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    getOne: jest.Mock;
   };
 
   beforeEach(async () => {
+    queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+    };
+
     repo = {
       count: jest.fn(),
       find: jest.fn(),
+      findOne: jest.fn(),
       create: jest.fn((value) => value),
-      save: jest.fn(async (value) => value),
+      save: jest.fn(async (value) => {
+        if (Array.isArray(value)) {
+          return value.map((row, index) => ({
+            ...row,
+            id: `audience-${index + 1}`,
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }));
+        }
+        return {
+          ...value,
+          id: 'audience-1',
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+        };
+      }),
+      remove: jest.fn(),
+      createQueryBuilder: jest.fn(() => queryBuilder),
     };
 
     const module = await Test.createTestingModule({
@@ -53,5 +86,30 @@ describe('AudiencesService', () => {
     expect(repo.create).not.toHaveBeenCalled();
     expect(repo.save).not.toHaveBeenCalled();
     expect(result).toEqual(existing);
+  });
+
+  it('creates a new audience when name is unique', async () => {
+    const created = await service.createForUser('user-1', 'Young Adult');
+
+    expect(created.name).toBe('Young Adult');
+    expect(created.is_default).toBe(false);
+    expect(repo.save).toHaveBeenCalled();
+  });
+
+  it('rejects duplicate audience names case-insensitively', async () => {
+    queryBuilder.getOne.mockResolvedValue({ id: 'existing' });
+
+    await expect(service.createForUser('user-1', 'adulto')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it('deletes an owned audience', async () => {
+    const audience = { id: 'audience-1', userId: 'user-1', name: 'Adulto' } as Audience;
+    repo.findOne.mockResolvedValue(audience);
+
+    await service.deleteForUser('user-1', 'audience-1');
+
+    expect(repo.remove).toHaveBeenCalledWith(audience);
   });
 });

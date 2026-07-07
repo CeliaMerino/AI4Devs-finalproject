@@ -8,7 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
 import { ImportExportPage } from './pages/ImportExportPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { StatsPage } from './pages/StatsPage';
 import './App.css';
 
@@ -57,15 +57,7 @@ function AppRoutes() {
           }
         />
         <Route path="import-export" element={<ImportExportPage />} />
-        <Route
-          path="profile"
-          element={
-            <PlaceholderPage
-              title="Profile / Settings"
-              description="Account profile and application settings will live here."
-            />
-          }
-        />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

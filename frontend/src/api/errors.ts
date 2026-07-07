@@ -19,6 +19,9 @@ export function messageFromApiError(status: number, body: ApiError): string {
   if (status === 409 || body.code === 'BOOK_DUPLICATE') {
     return 'Este libro ya está en tu biblioteca.';
   }
+  if (body.code === 'AUDIENCE_DUPLICATE') {
+    return 'Ya tienes una audiencia con ese nombre.';
+  }
   if (body.code === 'FINISHED_BEFORE_STARTED') {
     return 'La fecha de fin no puede ser anterior a la de inicio.';
   }

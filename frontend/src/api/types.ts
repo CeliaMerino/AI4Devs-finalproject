@@ -10,6 +10,14 @@ export type ReadingStatus = 'pendiente' | 'leyendo' | 'leido' | 'dnf';
 
 export type ReadFormat = 'fisico' | 'ebook' | 'audio';
 
+export interface Audience {
+  id: string;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CatalogEdition {
   title: string;
   authors: string;
