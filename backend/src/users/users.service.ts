@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AudiencesService } from '../audiences/audiences.service';
+import { FormatsService } from '../formats/formats.service';
 import { User } from './user.entity';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly audiencesService: AudiencesService,
+    private readonly formatsService: FormatsService,
   ) {}
 
   async findOrCreateByEmail(email: string): Promise<User> {
@@ -19,6 +21,7 @@ export class UsersService {
       user = this.usersRepo.create({ email: normalized, passwordHash: null });
       user = await this.usersRepo.save(user);
       await this.audiencesService.seedDefaultsForUser(user.id);
+      await this.formatsService.seedDefaultsForUser(user.id);
     }
     return user;
   }

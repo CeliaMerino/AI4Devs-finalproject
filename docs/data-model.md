@@ -14,8 +14,9 @@ Data model for **Reading Analytics Platform**: personal reading library, progres
 | **AnnualReadingGoal** | `annual_reading_goals` | Numeric annual book target per user and year |
 | **ImportJob** | `import_jobs` | Background Goodreads CSV import + enrichment job state |
 | **Audience** | `audiences` | User-configurable audience label (e.g. Adulto, Juvenil, Infantil) |
+| **Format** | `formats` | User-configurable read format label (e.g. Físico, Ebook, Audio) |
 
-All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, annual goals, import jobs, and audiences.
+All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, annual goals, import jobs, audiences, and formats.
 
 ## Entity definitions
 
@@ -85,6 +86,23 @@ User-owned audience classification label for books (KAN-64 / KAN-65). Seeded on 
 
 **Relationships:** many-to-one `user`; referenced by `books.audience_id`.
 
+### Format
+
+User-owned read format label for reading records (KAN-70 / KAN-71). Seeded on account creation with defaults: Audio, Ebook, Físico.
+
+| Field | Column | Type | Constraints |
+|-------|--------|------|-------------|
+| id | `id` | UUID | PK |
+| userId | `user_id` | UUID | FK → `users.id`, ON DELETE CASCADE, NOT NULL |
+| name | `name` | VARCHAR(100) | NOT NULL |
+| isDefault | `is_default` | BOOLEAN | NOT NULL, DEFAULT false |
+| createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
+| updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
+
+**Uniqueness:** `UNIQUE (user_id, lower(name))` — case-insensitive name per user.
+
+**Relationships:** many-to-one `user`; referenced by `reading_records.format_id`.
+
 ### ReadingRecord
 
 Reading status and progress for a single book (1:1 with book).
@@ -96,14 +114,14 @@ Reading status and progress for a single book (1:1 with book).
 | currentPage | `current_page` | INTEGER | NULL |
 | progressPercent | `progress_percent` | NUMERIC(5,2) | NULL |
 | rating | `rating` | NUMERIC(2,1) | NULL, 0.5–5.0 in 0.5 steps if set |
-| readFormat | `read_format` | VARCHAR(20) | NULL; see enum below |
+| formatId | `format_id` | UUID | NULL, FK → `formats.id`, ON DELETE SET NULL |
 | startedOn | `started_on` | DATE | NULL |
 | finishedOn | `finished_on` | DATE | NULL |
 | updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
 
 **status enum:** `pendiente` | `leyendo` | `leido` | `dnf`
 
-**read_format enum (when set):** `fisico` | `ebook` | `audio`
+**API `read_format` (derived):** legacy response field mapped from linked `formats.name` (`fisico` | `ebook` | `audio` for defaults).
 
 **Default on book create:** new books get `reading_records.status = 'pendiente'`.
 

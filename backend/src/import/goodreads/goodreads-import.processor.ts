@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from '../../books/entities/book.entity';
 import { ReadingRecord } from '../../books/entities/reading-record.entity';
+import { FormatsService } from '../../formats/formats.service';
 import {
   buildGoodreadsDedupKey,
   buildGoodreadsDedupKeyFromLibraryBook,
@@ -26,6 +27,7 @@ export class GoodreadsImportProcessor {
     @InjectRepository(ReadingRecord)
     private readonly readingRepo: Repository<ReadingRecord>,
     private readonly catalogEnrichment: ImportCatalogEnrichmentService,
+    private readonly formatsService: FormatsService,
   ) {}
 
   async processImport(
@@ -200,12 +202,17 @@ export class GoodreadsImportProcessor {
     const isFinished = readingDraft.status === 'leido';
     const pageCount = bookDraft.page_count;
 
+    const formatId = await this.formatsService.resolveFormatIdByLegacySlug(
+      userId,
+      readingDraft.read_format,
+    );
+
     const reading = this.readingRepo.create({
       bookId: savedBook.id,
       status: readingDraft.status,
       rating:
         readingDraft.rating === null ? null : String(readingDraft.rating),
-      readFormat: readingDraft.read_format,
+      formatId,
       startedOn: readingDraft.started_on,
       finishedOn: readingDraft.finished_on,
       currentPage: isFinished && pageCount != null ? pageCount : null,

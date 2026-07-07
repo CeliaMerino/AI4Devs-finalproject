@@ -5,6 +5,7 @@ import { Book } from '../../books/entities/book.entity';
 import { ReadingRecord } from '../../books/entities/reading-record.entity';
 import { GoodreadsImportProcessor } from './goodreads-import.processor';
 import { ImportCatalogEnrichmentService } from './import-catalog-enrichment.service';
+import { FormatsService } from '../../formats/formats.service';
 import type { GoodreadsMappedRow } from './goodreads-import.types';
 
 describe('GoodreadsImportProcessor', () => {
@@ -15,6 +16,9 @@ describe('GoodreadsImportProcessor', () => {
   let readingRepo: jest.Mocked<Pick<Repository<ReadingRecord>, 'create' | 'save'>>;
   let catalogEnrichment: jest.Mocked<
     Pick<ImportCatalogEnrichmentService, 'enrichBook'>
+  >;
+  let formatsService: jest.Mocked<
+    Pick<FormatsService, 'resolveFormatIdByLegacySlug'>
   >;
 
   const sampleRow: GoodreadsMappedRow = {
@@ -59,6 +63,11 @@ describe('GoodreadsImportProcessor', () => {
         enrichment_failed: false,
       })),
     };
+    formatsService = {
+      resolveFormatIdByLegacySlug: jest
+        .fn()
+        .mockResolvedValue('format-fisico'),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -66,6 +75,7 @@ describe('GoodreadsImportProcessor', () => {
         { provide: getRepositoryToken(Book), useValue: booksRepo },
         { provide: getRepositoryToken(ReadingRecord), useValue: readingRepo },
         { provide: ImportCatalogEnrichmentService, useValue: catalogEnrichment },
+        { provide: FormatsService, useValue: formatsService },
       ],
     }).compile();
 
