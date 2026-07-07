@@ -151,3 +151,103 @@ phases:
         summary: "Backend — normalize genre to closed taxonomy (Option C)"
         depends_on: [KAN-55]
         epic: KAN-53
+
+  - id: phase-8-audience-settings
+    name: "Phase 8 — Configurable audience (KAN-64 epic)"
+    note: >
+      First in the configurable-list pattern. Purely additive (no migration of existing data).
+      Serves as the template reused by Format (phase 9) and Genre (phase 11).
+    tickets:
+      - id: KAN-65
+        summary: "Audiences model + seed"
+        epic: KAN-64
+      - id: KAN-66
+        summary: "CRUD in Settings"
+        depends_on: [KAN-65]
+        epic: KAN-64
+      - id: KAN-67
+        summary: "Selector in add/edit book modal"
+        depends_on: [KAN-66]
+        epic: KAN-64
+      - id: KAN-68
+        summary: "Delete with confirmation"
+        depends_on: [KAN-67]
+        epic: KAN-64
+      - id: KAN-69
+        summary: "audienceDistribution in Reading Stats"
+        depends_on: [KAN-68]
+        epic: KAN-64
+
+  - id: phase-9-format-settings
+    name: "Phase 9 — Configurable read format (KAN-70 epic)"
+    note: >
+      Reuses the audience pattern from phase 8. Higher risk: migrates existing read_format CHECK
+      and touches production stats calculations (predominantReadFormat, formatDistribution).
+    tickets:
+      - id: KAN-71
+        summary: "Formats model + read_format migration"
+        epic: KAN-70
+        depends_on: [KAN-69]
+      - id: KAN-72
+        summary: "CRUD in Settings"
+        depends_on: [KAN-71]
+        epic: KAN-70
+      - id: KAN-73
+        summary: "Selector in reading flow"
+        depends_on: [KAN-72]
+        epic: KAN-70
+      - id: KAN-74
+        summary: "Delete with confirmation"
+        depends_on: [KAN-73]
+        epic: KAN-70
+      - id: KAN-75
+        summary: "Adapt predominantReadFormat and formatDistribution"
+        depends_on: [KAN-74]
+        epic: KAN-70
+
+  - id: phase-10-cover-picker
+    name: "Phase 10 — Cover picker in book edit (KAN-76 epic)"
+    note: >
+      Independent subsystem (catalog/covers — not Settings). Can be interleaved without blocking
+      or being blocked by phases 8–9 and 11.
+    tickets:
+      - id: KAN-77
+        summary: "Backend — search by title and author"
+        epic: KAN-76
+      - id: KAN-78
+        summary: "Frontend — picker button and cover grid"
+        depends_on: [KAN-77]
+        epic: KAN-76
+      - id: KAN-79
+        summary: "Persist cover_image_url selection"
+        depends_on: [KAN-78]
+        epic: KAN-76
+
+  - id: phase-11-genre-settings
+    name: "Phase 11 — Configurable genre (KAN-58 epic)"
+    note: >
+      Last in the configurable-list rollout. Benefits from phase 8 components and from genre
+      enrichment (KAN-53 → KAN-54/55/56). KAN-63 adds smart import mapping on top.
+    tickets:
+      - id: KAN-59
+        summary: "Genres model + books.genre migration + seed"
+        epic: KAN-58
+        depends_on: [KAN-56]
+        relates: [KAN-53]
+      - id: KAN-60
+        summary: "CRUD in Settings"
+        depends_on: [KAN-59]
+        epic: KAN-58
+      - id: KAN-61
+        summary: "Selector in add/edit book modal"
+        depends_on: [KAN-60]
+        epic: KAN-58
+      - id: KAN-62
+        summary: "Delete with confirmation"
+        depends_on: [KAN-61]
+        epic: KAN-58
+      - id: KAN-63
+        summary: "Smart genre mapping on import"
+        depends_on: [KAN-62]
+        epic: KAN-58
+        relates: [KAN-43, KAN-48]

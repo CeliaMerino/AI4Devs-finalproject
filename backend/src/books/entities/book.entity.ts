@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/user.entity';
+import { Audience } from '../../audiences/entities/audience.entity';
 import { ReadingRecord } from './reading-record.entity';
 
 export type DataSourceType =
@@ -69,6 +70,13 @@ export class Book {
 
   @Column({ type: 'varchar', length: 32, nullable: true })
   audience: AudienceType | null;
+
+  @Column({ name: 'audience_id', type: 'uuid', nullable: true })
+  audienceId: string | null;
+
+  @ManyToOne(() => Audience, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'audience_id' })
+  audienceRef: Audience | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
