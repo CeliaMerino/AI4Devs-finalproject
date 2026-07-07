@@ -6,11 +6,19 @@ import {
 import { GenreNormalizerService } from '../genre-normalizer.service';
 import type { CatalogIsbnLookupResult } from './catalog-isbn-lookup.types';
 import { OpenLibraryEnrichmentService } from './open-library-enrichment.service';
+import { isTransientCatalogError } from './catalog-error.util';
 import { retryWithBackoff } from './retry-with-backoff.util';
 import { GoogleBooksClient } from './google-books.client';
 import { OpenLibraryClient } from './open-library.client';
 
 const GENRE_LOOKUP_TIMEOUT_MS = 3000;
+const CATALOG_SEARCH_RETRY = {
+  maxAttempts: 3,
+  baseDelayMs: 200,
+  rateLimitBaseDelayMs: 2500,
+  rateLimitMaxAttempts: 5,
+  isRetryable: isTransientCatalogError,
+} as const;
 
 @Injectable()
 export class CatalogService {
@@ -200,12 +208,17 @@ export class CatalogService {
 
   private async lookupGenreFromGoogleBooks(isbn: string): Promise<string | null> {
     try {
-      const lookup = this.googleBooks.lookupGenreByIsbn(isbn);
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
-      });
-      const genre = await Promise.race([lookup, timeout]);
-      return genre ?? null;
+      return await retryWithBackoff(
+        async () => {
+          const lookup = this.googleBooks.lookupGenreByIsbn(isbn);
+          const timeout = new Promise<null>((resolve) => {
+            setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
+          });
+          const genre = await Promise.race([lookup, timeout]);
+          return genre ?? null;
+        },
+        CATALOG_SEARCH_RETRY,
+      );
     } catch (err) {
       this.logger.warn(
         `Google Books genre lookup failed for ISBN "${isbn}": ${err instanceof Error ? err.message : err}`,
@@ -218,13 +231,18 @@ export class CatalogService {
     externalProviderId: string,
   ): Promise<string | null> {
     try {
-      const lookup =
-        this.openLibraryEnrichment.lookupGenreFromProviderId(externalProviderId);
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
-      });
-      const genre = await Promise.race([lookup, timeout]);
-      return genre ?? null;
+      return await retryWithBackoff(
+        async () => {
+          const lookup =
+            this.openLibraryEnrichment.lookupGenreFromProviderId(externalProviderId);
+          const timeout = new Promise<null>((resolve) => {
+            setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
+          });
+          const genre = await Promise.race([lookup, timeout]);
+          return genre ?? null;
+        },
+        CATALOG_SEARCH_RETRY,
+      );
     } catch (err) {
       this.logger.warn(
         `Open Library work genre lookup failed for "${externalProviderId}": ${err instanceof Error ? err.message : err}`,
@@ -240,7 +258,7 @@ export class CatalogService {
     try {
       const items = await retryWithBackoff(
         () => provider.search(query, 1),
-        { maxAttempts: 3, baseDelayMs: 200 },
+        CATALOG_SEARCH_RETRY,
       );
       return items[0] ?? null;
     } catch (err) {

@@ -555,6 +555,25 @@ paths:
         '404':
           description: Job not found for user
 
+  /import/reenrich-pending:
+    post:
+      summary: Re-enrich books missing genre or cover
+      description: >-
+        Re-runs catalog enrichment for the authenticated user's books that still
+        lack `genre` or `cover_image_url`. Idempotent; respects catalog rate limits.
+      tags: [Import]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Re-enrichment summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReenrichPendingSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /books/catalog/search:
     get:
       summary: Search external catalog
@@ -1617,6 +1636,20 @@ components:
         phase:
           type: string
           enum: [queued, parsing, importing, enriching, completed, failed]
+
+    ReenrichPendingSummary:
+      type: object
+      required: [processed, enriched, still_failed]
+      properties:
+        processed:
+          type: integer
+          description: Books scanned that were missing genre or cover.
+        enriched:
+          type: integer
+          description: Books where at least one missing field was filled.
+        still_failed:
+          type: integer
+          description: Books where catalog lookup was attempted but returned no usable metadata.
 
     ImportJobStatusResponse:
       type: object

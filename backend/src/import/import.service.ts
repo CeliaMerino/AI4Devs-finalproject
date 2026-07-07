@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ImportJobRunner } from './import-job.runner';
 import { ImportJobService } from './import-job.service';
+import { ImportCatalogEnrichmentService } from './goodreads/import-catalog-enrichment.service';
 import type { ImportJobAcceptedResponse } from './import-job.types';
 import type { UploadedCsvFile } from './import.types';
 
@@ -15,6 +16,7 @@ export class ImportService {
   constructor(
     private readonly importJobService: ImportJobService,
     private readonly importJobRunner: ImportJobRunner,
+    private readonly catalogEnrichment: ImportCatalogEnrichmentService,
   ) {}
 
   async importGoodreadsUpload(
@@ -35,6 +37,10 @@ export class ImportService {
 
   getImportJob(userId: string, jobId: string) {
     return this.importJobService.getJobForUser(userId, jobId);
+  }
+
+  reenrichPendingBooks(userId: string) {
+    return this.catalogEnrichment.reenrichIncompleteBooks(userId);
   }
 
   private readGoodreadsUpload(file: UploadedCsvFile | undefined): string {

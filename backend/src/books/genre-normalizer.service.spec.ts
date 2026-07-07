@@ -11,6 +11,12 @@ describe('GenreNormalizerService', () => {
     ['Historical fiction', 'Histórica'],
     ['Literary fiction', 'Ficción'],
     ['Non-fiction biography', 'No ficción'],
+    ['Fiction, romance, general', 'Romance'],
+    ['Magic and Supernatural', 'Fantasía'],
+    ['Human cloning', 'Ciencia ficción'],
+    ['Guerra nuclear', 'No ficción'],
+    ['Young adult fiction', 'Ficción'],
+    ['Domestic thriller', 'Thriller'],
   ])('normalizes "%s" into "%s"', (input, expected) => {
     expect(service.normalize(input)).toBe(expected);
   });

@@ -108,6 +108,13 @@ export class GoodreadsImportProcessor {
       await reportProgress('enriching');
     }
 
+    const retriedFailures = await this.retryFailedEnrichments(
+      enrichment_failed,
+      reportProgress,
+    );
+    enrichment_failed.length = 0;
+    enrichment_failed.push(...retriedFailures);
+
     return {
       imported,
       skipped_rows,
@@ -119,6 +126,36 @@ export class GoodreadsImportProcessor {
         enrichment_failed_count: enrichment_failed.length,
       },
     };
+  }
+
+  private async retryFailedEnrichments(
+    failures: GoodreadsEnrichmentFailedRow[],
+    reportProgress: (
+      phase: GoodreadsImportProgressUpdate['phase'],
+    ) => Promise<void>,
+  ): Promise<GoodreadsEnrichmentFailedRow[]> {
+    if (failures.length === 0) {
+      return [];
+    }
+
+    const stillFailed: GoodreadsEnrichmentFailedRow[] = [];
+
+    for (const failure of failures) {
+      const book = await this.booksRepo.findOne({
+        where: { id: failure.book_id },
+      });
+      if (!book || (book.coverImageUrl && book.genre)) {
+        continue;
+      }
+
+      await reportProgress('enriching');
+      const enrichment = await this.catalogEnrichment.enrichBook(book);
+      if (enrichment.enrichment_failed) {
+        stillFailed.push(failure);
+      }
+    }
+
+    return stillFailed;
   }
 
   private async loadExistingDedupIndex(

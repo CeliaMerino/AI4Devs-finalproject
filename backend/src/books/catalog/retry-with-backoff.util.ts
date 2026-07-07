@@ -1,7 +1,12 @@
+import { isTransientCatalogError } from './catalog-error.util';
+
 export interface RetryWithBackoffOptions {
   maxAttempts: number;
   baseDelayMs: number;
+  rateLimitBaseDelayMs?: number;
+  rateLimitMaxAttempts?: number;
   sleep?: (ms: number) => Promise<void>;
+  isRetryable?: (err: unknown) => boolean;
 }
 
 const defaultSleep = (ms: number) =>
@@ -14,17 +19,33 @@ export async function retryWithBackoff<T>(
   options: RetryWithBackoffOptions,
 ): Promise<T> {
   const sleep = options.sleep ?? defaultSleep;
+  const isRetryable = options.isRetryable ?? (() => true);
+  const rateLimitBaseDelayMs = options.rateLimitBaseDelayMs ?? 2000;
+  const rateLimitMaxAttempts = options.rateLimitMaxAttempts ?? 5;
   let lastError: unknown;
+  let attempt = 0;
 
-  for (let attempt = 1; attempt <= options.maxAttempts; attempt += 1) {
+  while (attempt < options.maxAttempts) {
+    attempt += 1;
     try {
       return await operation();
     } catch (err) {
       lastError = err;
-      if (attempt === options.maxAttempts) {
+      if (!isRetryable(err)) {
         break;
       }
-      await sleep(options.baseDelayMs * 2 ** (attempt - 1));
+
+      const maxAttempts = isTransientCatalogError(err)
+        ? Math.max(options.maxAttempts, rateLimitMaxAttempts)
+        : options.maxAttempts;
+      if (attempt >= maxAttempts) {
+        break;
+      }
+
+      const delayMs = isTransientCatalogError(err)
+        ? rateLimitBaseDelayMs * 2 ** (attempt - 1)
+        : options.baseDelayMs * 2 ** (attempt - 1);
+      await sleep(delayMs);
     }
   }
 

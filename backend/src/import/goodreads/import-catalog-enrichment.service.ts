@@ -2,12 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CatalogService } from '../../books/catalog/catalog.service';
+import type { CatalogIsbnLookupResult } from '../../books/catalog/catalog-isbn-lookup.types';
 import { CatalogRateLimiter } from '../../books/catalog/catalog-rate-limiter.service';
 import { Book } from '../../books/entities/book.entity';
 
 export interface ImportEnrichmentResult {
   book: Book;
   enrichment_failed: boolean;
+}
+
+export interface ReenrichPendingSummary {
+  processed: number;
+  enriched: number;
+  still_failed: number;
 }
 
 @Injectable()
@@ -30,19 +37,26 @@ export class ImportCatalogEnrichmentService {
     let attempted = false;
 
     try {
-      let lookup = null;
+      let lookup: CatalogIsbnLookupResult | null = null;
 
       if (isbn) {
         attempted = true;
         await this.rateLimiter.throttle();
         lookup = await this.catalog.lookupByIsbn(isbn);
-      } else if (book.title.trim() && book.authors.trim()) {
+      }
+
+      const missingGenre = !book.genre && !lookup?.genre;
+      const missingCover = !book.coverImageUrl && !lookup?.cover_image_url;
+      const canSearchByTitle = Boolean(book.title.trim() && book.authors.trim());
+
+      if ((missingGenre || missingCover) && canSearchByTitle) {
         attempted = true;
         await this.rateLimiter.throttle();
-        lookup = await this.catalog.lookupByTitleAuthor(
+        const byTitle = await this.catalog.lookupByTitleAuthor(
           book.title,
           book.authors,
         );
+        lookup = this.mergeLookups(lookup, byTitle);
       }
 
       if (!lookup) {
@@ -73,5 +87,53 @@ export class ImportCatalogEnrichmentService {
       );
       return { book, enrichment_failed: attempted };
     }
+  }
+
+  private mergeLookups(
+    primary: CatalogIsbnLookupResult | null,
+    secondary: CatalogIsbnLookupResult | null,
+  ): CatalogIsbnLookupResult | null {
+    if (!primary) {
+      return secondary;
+    }
+    if (!secondary) {
+      return primary;
+    }
+
+    return {
+      cover_image_url: primary.cover_image_url ?? secondary.cover_image_url,
+      genre: primary.genre ?? secondary.genre,
+    };
+  }
+
+  async reenrichIncompleteBooks(userId: string): Promise<ReenrichPendingSummary> {
+    const books = await this.booksRepo.find({
+      where: { userId },
+      order: { createdAt: 'ASC' },
+    });
+
+    const pending = books.filter((book) => !book.coverImageUrl || !book.genre);
+    let enriched = 0;
+    let still_failed = 0;
+
+    for (const book of pending) {
+      const missingCover = !book.coverImageUrl;
+      const missingGenre = !book.genre;
+      const result = await this.enrichBook(book);
+      if (result.enrichment_failed) {
+        still_failed += 1;
+      } else if (
+        (missingCover && result.book.coverImageUrl) ||
+        (missingGenre && result.book.genre)
+      ) {
+        enriched += 1;
+      }
+    }
+
+    return {
+      processed: pending.length,
+      enriched,
+      still_failed,
+    };
   }
 }
