@@ -4,6 +4,7 @@ import {
   CatalogSearchResponseDto,
 } from '../dto/catalog-edition.dto';
 import type { CatalogIsbnLookupResult } from './catalog-isbn-lookup.types';
+import { OpenLibraryEnrichmentService } from './open-library-enrichment.service';
 import { retryWithBackoff } from './retry-with-backoff.util';
 import { GoogleBooksClient } from './google-books.client';
 import { OpenLibraryClient } from './open-library.client';
@@ -17,6 +18,7 @@ export class CatalogService {
   constructor(
     private readonly openLibrary: OpenLibraryClient,
     private readonly googleBooks: GoogleBooksClient,
+    private readonly openLibraryEnrichment: OpenLibraryEnrichmentService,
   ) {}
 
   async search(query: string, limit: number): Promise<CatalogSearchResponseDto> {
@@ -24,7 +26,7 @@ export class CatalogService {
       const olItems = await this.openLibrary.search(query, limit);
       if (olItems.length > 0) {
         const items = await Promise.all(
-          olItems.map((item) => this.fillGenreFromGoogleBooksIfMissing(item)),
+          olItems.map((item) => this.fillMissingGenre(item)),
         );
         return { items, source: 'open_library' };
       }
@@ -87,21 +89,37 @@ export class CatalogService {
     return this.mergeProviderLookups(olEdition, gbEdition);
   }
 
+  async resolveMissingGenre(
+    edition: Pick<
+      CatalogEditionDto,
+      | 'genre'
+      | 'isbn_13'
+      | 'isbn_10'
+      | 'data_source'
+      | 'external_provider_id'
+    >,
+  ): Promise<string | null> {
+    const enriched = await this.fillMissingGenre({
+      title: '',
+      authors: '',
+      cover_image_url: null,
+      page_count: null,
+      ...edition,
+    });
+    return enriched.genre;
+  }
+
+  /** @deprecated Use resolveMissingGenre */
   async resolveMissingGenreFromGoogleBooks(
     edition: Pick<
       CatalogEditionDto,
       'genre' | 'isbn_13' | 'isbn_10' | 'data_source'
     >,
   ): Promise<string | null> {
-    const enriched = await this.fillGenreFromGoogleBooksIfMissing({
-      title: '',
-      authors: '',
-      cover_image_url: null,
-      page_count: null,
-      external_provider_id: '',
+    return this.resolveMissingGenre({
       ...edition,
+      external_provider_id: '',
     });
-    return enriched.genre;
   }
 
   private async mergeProviderLookups(
@@ -114,7 +132,7 @@ export class CatalogService {
 
     let genre = gbEdition?.genre ?? olEdition?.genre ?? null;
     if (!genre && olEdition) {
-      const enriched = await this.fillGenreFromGoogleBooksIfMissing(olEdition);
+      const enriched = await this.fillMissingGenre(olEdition);
       genre = enriched.genre;
     }
 
@@ -123,6 +141,28 @@ export class CatalogService {
         olEdition?.cover_image_url ?? gbEdition?.cover_image_url ?? null,
       genre,
     };
+  }
+
+  private async fillMissingGenre(
+    edition: CatalogEditionDto,
+  ): Promise<CatalogEditionDto> {
+    const afterGoogleBooks = await this.fillGenreFromGoogleBooksIfMissing(edition);
+    if (afterGoogleBooks.genre || afterGoogleBooks.data_source !== 'open_library') {
+      return afterGoogleBooks;
+    }
+
+    if (!afterGoogleBooks.external_provider_id) {
+      return afterGoogleBooks;
+    }
+
+    const genre = await this.lookupGenreFromOpenLibraryWork(
+      afterGoogleBooks.external_provider_id,
+    );
+    if (!genre) {
+      return afterGoogleBooks;
+    }
+
+    return { ...afterGoogleBooks, genre };
   }
 
   private async fillGenreFromGoogleBooksIfMissing(
@@ -156,6 +196,25 @@ export class CatalogService {
     } catch (err) {
       this.logger.warn(
         `Google Books genre lookup failed for ISBN "${isbn}": ${err instanceof Error ? err.message : err}`,
+      );
+      return null;
+    }
+  }
+
+  private async lookupGenreFromOpenLibraryWork(
+    externalProviderId: string,
+  ): Promise<string | null> {
+    try {
+      const lookup =
+        this.openLibraryEnrichment.lookupGenreFromProviderId(externalProviderId);
+      const timeout = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), GENRE_LOOKUP_TIMEOUT_MS);
+      });
+      const genre = await Promise.race([lookup, timeout]);
+      return genre ?? null;
+    } catch (err) {
+      this.logger.warn(
+        `Open Library work genre lookup failed for "${externalProviderId}": ${err instanceof Error ? err.message : err}`,
       );
       return null;
     }

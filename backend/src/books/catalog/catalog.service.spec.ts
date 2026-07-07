@@ -16,14 +16,17 @@ describe('CatalogService', () => {
 
   let openLibrary: { search: jest.Mock };
   let googleBooks: { search: jest.Mock; lookupGenreByIsbn: jest.Mock };
+  let openLibraryEnrichment: { lookupGenreFromProviderId: jest.Mock };
   let service: CatalogService;
 
   beforeEach(() => {
     openLibrary = { search: jest.fn() };
     googleBooks = { search: jest.fn(), lookupGenreByIsbn: jest.fn() };
+    openLibraryEnrichment = { lookupGenreFromProviderId: jest.fn() };
     service = new CatalogService(
       openLibrary as never,
       googleBooks as never,
+      openLibraryEnrichment as never,
     );
   });
 
@@ -55,11 +58,45 @@ describe('CatalogService', () => {
       { ...olEdition, genre: null },
     ]);
     googleBooks.lookupGenreByIsbn.mockResolvedValue(null);
+    openLibraryEnrichment.lookupGenreFromProviderId.mockResolvedValue(null);
 
     const result = await service.search('le guin', 20);
 
     expect(googleBooks.lookupGenreByIsbn).toHaveBeenCalledWith('9780618640157');
+    expect(openLibraryEnrichment.lookupGenreFromProviderId).toHaveBeenCalledWith(
+      '/works/OL1W',
+    );
     expect(result.items[0]?.genre).toBeNull();
+  });
+
+  it('fills genre from Open Library work when Google Books misses', async () => {
+    openLibrary.search.mockResolvedValue([
+      { ...olEdition, genre: null },
+    ]);
+    googleBooks.lookupGenreByIsbn.mockResolvedValue(null);
+    openLibraryEnrichment.lookupGenreFromProviderId.mockResolvedValue(
+      'Science fiction',
+    );
+
+    const result = await service.search('le guin', 20);
+
+    expect(googleBooks.lookupGenreByIsbn).toHaveBeenCalledWith('9780618640157');
+    expect(openLibraryEnrichment.lookupGenreFromProviderId).toHaveBeenCalledWith(
+      '/works/OL1W',
+    );
+    expect(result.items[0]?.genre).toBe('Science fiction');
+  });
+
+  it('does not call Open Library work lookup when Google Books fills genre', async () => {
+    openLibrary.search.mockResolvedValue([
+      { ...olEdition, genre: null },
+    ]);
+    googleBooks.lookupGenreByIsbn.mockResolvedValue('Fantasy');
+
+    const result = await service.search('le guin', 20);
+
+    expect(openLibraryEnrichment.lookupGenreFromProviderId).not.toHaveBeenCalled();
+    expect(result.items[0]?.genre).toBe('Fantasy');
   });
 
   it('falls back to Google Books when Open Library is empty', async () => {
@@ -123,6 +160,32 @@ describe('CatalogService', () => {
       expect(result).toEqual({
         cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
         genre: 'Science Fiction',
+      });
+    });
+
+    it('fills genre via Open Library work when Google Books misses', async () => {
+      openLibrary.search.mockResolvedValue([
+        {
+          ...olEdition,
+          genre: null,
+          cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+        },
+      ]);
+      googleBooks.search.mockResolvedValue([]);
+      googleBooks.lookupGenreByIsbn.mockResolvedValue(null);
+      openLibraryEnrichment.lookupGenreFromProviderId.mockResolvedValue(
+        'Historical fiction',
+      );
+
+      const result = await service.lookupByIsbn('9780618640157');
+
+      expect(googleBooks.lookupGenreByIsbn).toHaveBeenCalledWith('9780618640157');
+      expect(openLibraryEnrichment.lookupGenreFromProviderId).toHaveBeenCalledWith(
+        '/works/OL1W',
+      );
+      expect(result).toEqual({
+        cover_image_url: 'https://covers.openlibrary.org/b/id/1-L.jpg',
+        genre: 'Historical fiction',
       });
     });
 
