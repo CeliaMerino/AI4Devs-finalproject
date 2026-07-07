@@ -13,8 +13,9 @@ Data model for **Reading Analytics Platform**: personal reading library, progres
 | **TbrEntry** | `tbr_entries` | Book on a monthly TBR with sort order and completion |
 | **AnnualReadingGoal** | `annual_reading_goals` | Numeric annual book target per user and year |
 | **ImportJob** | `import_jobs` | Background Goodreads CSV import + enrichment job state |
+| **Audience** | `audiences` | User-configurable audience label (e.g. Adulto, Juvenil, Infantil) |
 
-All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, annual goals, and import jobs.
+All user-owned books are scoped by `user_id`. Deleting a user cascades to books, reading records, TBR lists, annual goals, import jobs, and audiences.
 
 ## Entity definitions
 
@@ -52,7 +53,8 @@ Metadata for a title in the user’s library.
 | dataSource | `data_source` | VARCHAR(32) | NOT NULL; see enum below |
 | externalProviderId | `external_provider_id` | VARCHAR(128) | NULL (catalog edition id) |
 | notes | `notes` | TEXT | NULL |
-| audience | `audience` | VARCHAR(32) | NULL; `young_adult` \| `new_adult` \| `adult` |
+| audience | `audience` | VARCHAR(32) | NULL; `young_adult` \| `new_adult` \| `adult` (legacy enum, KAN-35) |
+| audienceId | `audience_id` | UUID | NULL, FK → `audiences.id`, ON DELETE SET NULL |
 | createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
 | updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
 
@@ -62,9 +64,26 @@ Metadata for a title in the user’s library.
 
 **Uniqueness (application layer):** per user, duplicate blocked by `isbn_13` or (`data_source` + `external_provider_id`) — see `BooksService.assertNotDuplicate`.
 
-**Relationships:** many-to-one `user`; one-to-one `readingRecord`.
+**Relationships:** many-to-one `user`; optional many-to-one `audience` via `audience_id`; one-to-one `readingRecord`.
 
 **Index:** `idx_books_user_id` on `user_id`.
+
+### Audience
+
+User-owned audience classification label for books (KAN-64 / KAN-65). Seeded on account creation with defaults: Adulto, Juvenil, Infantil.
+
+| Field | Column | Type | Constraints |
+|-------|--------|------|-------------|
+| id | `id` | UUID | PK |
+| userId | `user_id` | UUID | FK → `users.id`, ON DELETE CASCADE, NOT NULL |
+| name | `name` | VARCHAR(100) | NOT NULL |
+| isDefault | `is_default` | BOOLEAN | NOT NULL, DEFAULT false |
+| createdAt | `created_at` | TIMESTAMPTZ | NOT NULL |
+| updatedAt | `updated_at` | TIMESTAMPTZ | NOT NULL |
+
+**Uniqueness:** `UNIQUE (user_id, lower(name))` — case-insensitive name per user.
+
+**Relationships:** many-to-one `user`; referenced by `books.audience_id`.
 
 ### ReadingRecord
 
