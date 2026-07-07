@@ -4,6 +4,8 @@ import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AudiencesModule } from '../src/audiences/audiences.module';
+import { Audience } from '../src/audiences/entities/audience.entity';
 import { AuthModule } from '../src/auth/auth.module';
 import { BooksModule } from '../src/books/books.module';
 import { Book } from '../src/books/entities/book.entity';
@@ -28,7 +30,7 @@ interface SeedBook {
   finishedOn?: string;
   rating?: number;
   readFormat?: 'fisico' | 'ebook' | 'audio';
-  audience?: 'young_adult' | 'new_adult' | 'adult' | null;
+  audienceId?: string | null;
 }
 
 describe('Stats API (integration)', () => {
@@ -53,10 +55,17 @@ describe('Stats API (integration)', () => {
         data_source: 'manual',
         genre: book.genre ?? null,
         page_count: book.pageCount ?? null,
-        audience: book.audience ?? null,
       })
       .expect(201);
     const bookId = (createRes.body as { book: { id: string } }).book.id;
+
+    if (book.audienceId !== undefined) {
+      await request(app.getHttpServer())
+        .patch(`/v1/books/${bookId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ audience_id: book.audienceId })
+        .expect(200);
+    }
 
     const status = book.status ?? 'leido';
     const patch: Record<string, unknown> = {
@@ -113,6 +122,7 @@ describe('Stats API (integration)', () => {
             User,
             Book,
             ReadingRecord,
+            Audience,
             AnnualReadingGoal,
             MonthlyTbrList,
             TbrEntry,
@@ -121,6 +131,7 @@ describe('Stats API (integration)', () => {
         }),
         UsersModule,
         AuthModule,
+        AudiencesModule,
         BooksModule,
         ListsModule,
         GoalsModule,
@@ -137,6 +148,16 @@ describe('Stats API (integration)', () => {
 
     token = await login('stats@example.com');
 
+    const audiencesRes = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const audiences = audiencesRes.body as Array<{ id: string; name: string }>;
+    const juvenil = audiences.find((item) => item.name === 'Juvenil');
+    const adulto = audiences.find((item) => item.name === 'Adulto');
+    expect(juvenil).toBeDefined();
+    expect(adulto).toBeDefined();
+
     await seedBook(token, {
       title: 'Fantasy A',
       genre: 'Fantasy',
@@ -144,7 +165,7 @@ describe('Stats API (integration)', () => {
       finishedOn: '2025-06-10',
       rating: 5,
       readFormat: 'fisico',
-      audience: 'young_adult',
+      audienceId: juvenil!.id,
     });
     await seedBook(token, {
       title: 'Fantasy B',
@@ -153,7 +174,7 @@ describe('Stats API (integration)', () => {
       finishedOn: '2025-06-20',
       rating: 4,
       readFormat: 'fisico',
-      audience: 'young_adult',
+      audienceId: juvenil!.id,
     });
     await seedBook(token, {
       title: 'Sci-Fi C',
@@ -161,7 +182,7 @@ describe('Stats API (integration)', () => {
       pageCount: 400,
       finishedOn: '2025-06-15',
       readFormat: 'ebook',
-      audience: 'adult',
+      audienceId: adulto!.id,
     });
     await seedBook(token, {
       title: 'No genre D',
@@ -372,14 +393,14 @@ describe('Stats API (integration)', () => {
     expect(body.predominant_format).toBe('fisico');
   });
 
-  it('returns audience distribution with null bucketed as unknown', async () => {
+  it('returns audience distribution with null audience_id bucketed as unknown', async () => {
     const body = await fetchStats(token, 2025, 6);
     const byAudience = Object.fromEntries(
       body.audience_distribution.map((a) => [a.audience, a.count]),
     );
     expect(byAudience).toEqual({
-      young_adult: 2,
-      adult: 1,
+      Juvenil: 2,
+      Adulto: 1,
       unknown: 1,
     });
   });

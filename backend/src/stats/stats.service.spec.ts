@@ -53,6 +53,19 @@ describe('StatsService (pure helpers)', () => {
     });
   });
 
+  describe('audienceDistributionKey', () => {
+    it('maps missing audience to unknown', () => {
+      expect(StatsService.audienceDistributionKey(null)).toBe('unknown');
+      expect(StatsService.audienceDistributionKey(undefined)).toBe('unknown');
+      expect(StatsService.audienceDistributionKey('unknown')).toBe('unknown');
+    });
+
+    it('preserves user audience names', () => {
+      expect(StatsService.audienceDistributionKey('Juvenil')).toBe('Juvenil');
+      expect(StatsService.audienceDistributionKey('Adulto')).toBe('Adulto');
+    });
+  });
+
   describe('toInt', () => {
     it('parses numeric strings from raw query results', () => {
       expect(StatsService.toInt('4')).toBe(4);

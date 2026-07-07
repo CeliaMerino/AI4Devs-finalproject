@@ -1427,7 +1427,7 @@ components:
       properties:
         audience:
           type: string
-          description: Book audience (`young_adult` | `new_adult` | `adult`), or `unknown` when unset.
+          description: User audience label name from `audiences`, or `unknown` when `audience_id` is unset.
         count:
           type: integer
 

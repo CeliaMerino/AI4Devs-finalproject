@@ -1,5 +1,4 @@
-import type { AudienceCount, AudienceType } from '../../api/types';
-import { formatAudience } from '../../lib/audience';
+import type { AudienceCount } from '../../api/types';
 import { ChartCard } from '../ui';
 import { PieChart, type PieSlice } from './PieChart';
 import './PieChart.css';
@@ -9,10 +8,7 @@ const AUDIENCE_LABELS: Record<string, string> = {
 };
 
 function audienceLabel(audience: string): string {
-  if (audience in AUDIENCE_LABELS) {
-    return AUDIENCE_LABELS[audience];
-  }
-  return formatAudience(audience as AudienceType);
+  return AUDIENCE_LABELS[audience] ?? audience;
 }
 
 interface AudiencePieChartProps {
@@ -34,7 +30,7 @@ export function AudiencePieChart({ distribution }: AudiencePieChartProps) {
     <ChartCard
       className="audience-pie-chart"
       title="Distribución por público objetivo"
-      subtitle="Young adult, new adult y adulto."
+      subtitle="Etiquetas configuradas en Ajustes."
     >
       <PieChart slices={slices} />
     </ChartCard>
