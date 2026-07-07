@@ -1,9 +1,10 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { Repository } from 'typeorm';
 import { AudiencesModule } from '../src/audiences/audiences.module';
 import { Audience } from '../src/audiences/entities/audience.entity';
 import { AuthModule } from '../src/auth/auth.module';
@@ -15,6 +16,8 @@ import { UsersModule } from '../src/users/users.module';
 describe('Audiences API (integration)', () => {
   let app: INestApplication<App>;
   let token: string;
+  let userId: string;
+  let bookRepo: Repository<Book>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -44,6 +47,8 @@ describe('Audiences API (integration)', () => {
       .send({ email: 'audiences@example.com' })
       .expect(201);
     token = login.body.access_token;
+    userId = login.body.user.id;
+    bookRepo = moduleRef.get(getRepositoryToken(Book));
   });
 
   afterAll(async () => {
@@ -81,6 +86,61 @@ describe('Audiences API (integration)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'adulto' })
       .expect(409);
+  });
+
+  it('GET /v1/audiences/{id}/affected-books returns assigned book count', async () => {
+    const list = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const target = list.body.find((item: { name: string }) => item.name === 'Adulto');
+    expect(target).toBeDefined();
+
+    await bookRepo.save(
+      bookRepo.create({
+        userId,
+        title: 'Assigned Book',
+        authors: 'Author',
+        dataSource: 'manual',
+        audienceId: target.id,
+      }),
+    );
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/audiences/${target.id}/affected-books`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.affected_book_count).toBe(1);
+  });
+
+  it('DELETE /v1/audiences/{id} clears audience_id on assigned books', async () => {
+    const list = await request(app.getHttpServer())
+      .get('/v1/audiences')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const target = list.body.find((item: { name: string }) => item.name === 'Juvenil');
+    expect(target).toBeDefined();
+
+    const book = await bookRepo.save(
+      bookRepo.create({
+        userId,
+        title: 'Juvenil Book',
+        authors: 'Author',
+        dataSource: 'manual',
+        audienceId: target.id,
+      }),
+    );
+
+    await request(app.getHttpServer())
+      .delete(`/v1/audiences/${target.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
+
+    const updated = await bookRepo.findOneBy({ id: book.id });
+    expect(updated?.audienceId).toBeNull();
   });
 
   it('DELETE /v1/audiences/{id} removes an audience', async () => {

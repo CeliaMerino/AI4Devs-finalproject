@@ -30,6 +30,14 @@ export class AudiencesController {
     return this.audiencesService.createForUser(req.user.userId, body.name);
   }
 
+  @Get(':id/affected-books')
+  affectedBooks(
+    @Req() req: RequestWithUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.audiencesService.countAffectedBooks(req.user.userId, id);
+  }
+
   @Delete(':id')
   @HttpCode(204)
   async delete(

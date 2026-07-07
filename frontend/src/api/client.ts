@@ -3,6 +3,7 @@ import type {
   AnnualGoalResponse,
   ApiError,
   Audience,
+  AudienceAffectedBooksResponse,
   Book,
   BookCreatedResponse,
   CatalogEdition,
@@ -79,6 +80,12 @@ export async function createAudience(name: string): Promise<Audience> {
     method: 'POST',
     body: JSON.stringify({ name }),
   });
+}
+
+export async function getAudienceAffectedBookCount(
+  audienceId: string,
+): Promise<AudienceAffectedBooksResponse> {
+  return request(`/audiences/${audienceId}/affected-books`);
 }
 
 export async function deleteAudience(audienceId: string): Promise<void> {

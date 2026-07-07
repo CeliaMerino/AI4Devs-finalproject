@@ -1,6 +1,7 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Book } from '../books/entities/book.entity';
 import { DEFAULT_AUDIENCE_NAMES } from './audiences.constants';
 import { AudiencesService } from './audiences.service';
 import { Audience } from './entities/audience.entity';
@@ -15,6 +16,9 @@ describe('AudiencesService', () => {
     save: jest.Mock;
     remove: jest.Mock;
     createQueryBuilder: jest.Mock;
+  };
+  let booksRepo: {
+    count: jest.Mock;
   };
   let queryBuilder: {
     where: jest.Mock;
@@ -54,10 +58,15 @@ describe('AudiencesService', () => {
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
 
+    booksRepo = {
+      count: jest.fn(),
+    };
+
     const module = await Test.createTestingModule({
       providers: [
         AudiencesService,
         { provide: getRepositoryToken(Audience), useValue: repo },
+        { provide: getRepositoryToken(Book), useValue: booksRepo },
       ],
     }).compile();
 
@@ -102,6 +111,19 @@ describe('AudiencesService', () => {
     await expect(service.createForUser('user-1', 'adulto')).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+
+  it('counts books affected by an owned audience', async () => {
+    const audience = { id: 'audience-1', userId: 'user-1', name: 'Adulto' } as Audience;
+    repo.findOne.mockResolvedValue(audience);
+    booksRepo.count.mockResolvedValue(3);
+
+    const result = await service.countAffectedBooks('user-1', 'audience-1');
+
+    expect(result).toEqual({ affected_book_count: 3 });
+    expect(booksRepo.count).toHaveBeenCalledWith({
+      where: { userId: 'user-1', audienceId: 'audience-1' },
+    });
   });
 
   it('deletes an owned audience', async () => {

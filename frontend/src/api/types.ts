@@ -18,6 +18,10 @@ export interface Audience {
   updated_at: string;
 }
 
+export interface AudienceAffectedBooksResponse {
+  affected_book_count: number;
+}
+
 export interface CatalogEdition {
   title: string;
   authors: string;
