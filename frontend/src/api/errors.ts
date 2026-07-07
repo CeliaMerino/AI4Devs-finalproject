@@ -16,9 +16,6 @@ export function messageFromApiError(status: number, body: ApiError): string {
   if (status === 401) {
     return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
   }
-  if (status === 409 || body.code === 'BOOK_DUPLICATE') {
-    return 'Este libro ya está en tu biblioteca.';
-  }
   if (body.code === 'AUDIENCE_DUPLICATE') {
     return 'Ya tienes una audiencia con ese nombre.';
   }
@@ -27,6 +24,9 @@ export function messageFromApiError(status: number, body: ApiError): string {
   }
   if (body.code === 'TBR_BOOK_NOT_PENDING') {
     return 'Only pending books can be added to TBR.';
+  }
+  if (status === 409 || body.code === 'BOOK_DUPLICATE') {
+    return 'Este libro ya está en tu biblioteca.';
   }
   if (typeof body.message === 'string') {
     return body.message;
