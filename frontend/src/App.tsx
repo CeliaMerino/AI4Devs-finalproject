@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { ListsPage } from './pages/ListsPage';
 import { LoginPage } from './pages/LoginPage';
 import { ImportExportPage } from './pages/ImportExportPage';
+import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { StatsPage } from './pages/StatsPage';
 import './App.css';
