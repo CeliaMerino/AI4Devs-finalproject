@@ -10,6 +10,7 @@ import type {
   CatalogSearchResponse,
   CreateBookPayload,
   EditionCoversResponse,
+  Format,
   GoodreadsImportResponse,
   ImportJobAcceptedResponse,
   ImportJobStatusResponse,
@@ -90,6 +91,21 @@ export async function getAudienceAffectedBookCount(
 
 export async function deleteAudience(audienceId: string): Promise<void> {
   return request(`/audiences/${audienceId}`, { method: 'DELETE' });
+}
+
+export async function listFormats(): Promise<Format[]> {
+  return request('/formats');
+}
+
+export async function createFormat(name: string): Promise<Format> {
+  return request('/formats', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteFormat(formatId: string): Promise<void> {
+  return request(`/formats/${formatId}`, { method: 'DELETE' });
 }
 
 export async function searchCatalog(

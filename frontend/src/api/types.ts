@@ -18,6 +18,14 @@ export interface Audience {
   updated_at: string;
 }
 
+export interface Format {
+  id: string;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AudienceAffectedBooksResponse {
   affected_book_count: number;
 }
