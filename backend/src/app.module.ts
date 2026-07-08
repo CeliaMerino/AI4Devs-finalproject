@@ -14,10 +14,10 @@ import { TbrEntry } from './lists/entities/tbr-entry.entity';
 import { StatsModule } from './stats/stats.module';
 import { ImportModule } from './import/import.module';
 import { ImportJob } from './import/entities/import-job.entity';
-import { Audience } from '../audiences/entities/audience.entity';
-import { AudiencesModule } from '../audiences/audiences.module';
-import { Format } from '../formats/entities/format.entity';
-import { FormatsModule } from '../formats/formats.module';
+import { Audience } from './audiences/entities/audience.entity';
+import { AudiencesModule } from './audiences/audiences.module';
+import { Format } from './formats/entities/format.entity';
+import { FormatsModule } from './formats/formats.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
