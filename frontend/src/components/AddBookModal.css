@@ -17,6 +17,7 @@
   flex-direction: column;
   padding: 1.25rem;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
 }
 
 .modal-header {
@@ -24,6 +25,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.15rem;
 }
 
 .modal-header h2 {
@@ -102,8 +111,6 @@
   list-style: none;
   margin: 1rem 0 0;
   padding: 0;
-  overflow-y: auto;
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -173,6 +180,7 @@
   margin-top: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid #a7bcbd;
+  flex-shrink: 0;
 }
 
 .btn-primary,
